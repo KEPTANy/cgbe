@@ -1,0 +1,6 @@
+# LSP stuff
+.cache/
+compile_commands.json
+
+bin/
+build/
