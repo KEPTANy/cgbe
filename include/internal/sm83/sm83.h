@@ -56,7 +56,7 @@ struct sm83 *sm83_new(struct bus *bus);
 // Deallocates the core, bus isn't deleted.
 void sm83_delete(struct sm83 *cpu);
 
-// Executes one clock cycle.
+// Executes one machine cycle.
 void sm83_m_cycle(struct sm83 *cpu);
 
 #endif
