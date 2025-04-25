@@ -14,9 +14,9 @@ struct bus *bus_new(struct cartridge *cart);
 void bus_delete(struct bus *bus);
 
 // Reads data.
-uint8_t bus_rom_read(struct bus *bus, uint16_t address);
+uint8_t bus_read(struct bus *bus, uint16_t address);
 
 // Writes data.
-void bus_rom_write(struct bus *bus, uint16_t address, uint8_t val);
+void bus_write(struct bus *bus, uint16_t address, uint8_t val);
 
 #endif

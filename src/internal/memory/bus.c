@@ -14,7 +14,7 @@ struct bus *bus_new(struct cartridge *cart) {
 
 void bus_delete(struct bus *bus) { free(bus); }
 
-uint8_t bus_rom_read(struct bus *bus, uint16_t address) {
+uint8_t bus_read(struct bus *bus, uint16_t address) {
     if (0x0000 <= address && address <= 0x7FFF) {
         return cartridge_rom_read(bus->cart, address);
     } else {
@@ -22,7 +22,7 @@ uint8_t bus_rom_read(struct bus *bus, uint16_t address) {
     }
 }
 
-void bus_rom_write(struct bus *bus, uint16_t address, uint8_t val) {
+void bus_write(struct bus *bus, uint16_t address, uint8_t val) {
     if (0x0000 <= address && address <= 0x7FFF) {
         cartridge_rom_write(bus->cart, address, val);
     } else {
