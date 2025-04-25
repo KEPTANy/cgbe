@@ -155,6 +155,36 @@ static void ld_imm16_sp(struct sm83 *cpu) {
     }
 }
 
+// INC r16
+// Opcode: 0b00xx0011
+// M-cycles: 2
+// Flags: ----
+static void inc_r16(struct sm83 *cpu, enum r16 reg) {
+    assert(cpu->m_cycle < 2);
+
+    switch (cpu->m_cycle++) {
+    case 0:
+        switch (reg) {
+        case r16_bc:
+            cpu->regs.bc++;
+            break;
+        case r16_de:
+            cpu->regs.de++;
+            break;
+        case r16_hl:
+            cpu->regs.hl++;
+            break;
+        case r16_sp:
+            cpu->regs.sp++;
+            break;
+        }
+        break;
+    case 1:
+        prefetch(cpu);
+        break;
+    }
+}
+
 void sm83_m_cycle(struct sm83 *cpu) {
     switch (cpu->opcode) {
     case 0x00: // NOP
@@ -202,6 +232,19 @@ void sm83_m_cycle(struct sm83 *cpu) {
 
     case 0x08: // LD [imm16], sp
         ld_imm16_sp(cpu);
+        break;
+
+    case 0x03: // INC bc
+        inc_r16(cpu, r16_bc);
+        break;
+    case 0x13: // INC de
+        inc_r16(cpu, r16_de);
+        break;
+    case 0x23: // INC hl
+        inc_r16(cpu, r16_hl);
+        break;
+    case 0x33: // INC sp
+        inc_r16(cpu, r16_sp);
         break;
 
     default:
