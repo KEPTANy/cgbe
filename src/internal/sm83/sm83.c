@@ -14,6 +14,10 @@ struct sm83 *sm83_new(struct bus *bus) {
     cpu->regs.pc = 0;
     cpu->regs.sp = 0;
 
+    // Make first op NOP so we just fetch the next one on the first m-cycle.
+    cpu->opcode = 0x00;
+    cpu->m_cycle = 0;
+
     return cpu;
 }
 
