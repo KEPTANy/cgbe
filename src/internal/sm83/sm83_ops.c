@@ -147,6 +147,41 @@ static void dec_r16(struct sm83 *cpu, enum r16 reg) {
     }
 }
 
+// ADD hl, r16
+// Opcode: 0b00xx1001
+// M-cycles: 2
+// Flags: -0HC
+static void add_hl_r16(struct sm83 *cpu, enum r16 reg) {
+    assert(cpu->m_cycle < 2);
+
+    uint32_t sum = 0;
+    switch (cpu->m_cycle++) {
+    // case 0:
+    case 1:
+        cpu->regs.f &= ~(SM83_N_MASK & SM83_H_MASK & SM83_C_MASK); // N = 0, H = 0, C = 0
+
+        sum = cpu->regs.hl;
+        switch (reg) {
+        case r16_bc: sum += cpu->regs.bc; break;
+        case r16_de: sum += cpu->regs.de; break;
+        case r16_hl: sum += cpu->regs.hl; break;
+        case r16_sp: sum += cpu->regs.sp; break;
+        }
+        cpu->regs.hl = sum;
+
+        if (sum & (1 << 12)) {
+            cpu->regs.f |= SM83_H_MASK;
+        }
+
+        if (sum & (1 << 16)) {
+            cpu->regs.f |= SM83_C_MASK;
+        }
+
+        prefetch(cpu);
+        break;
+    }
+}
+
 void sm83_m_cycle(struct sm83 *cpu) {
     switch (cpu->opcode) {
     case 0x00: nop(cpu); break; // NOP
@@ -177,6 +212,11 @@ void sm83_m_cycle(struct sm83 *cpu) {
     case 0x1B: dec_r16(cpu, r16_de); break; // DEC de
     case 0x2B: dec_r16(cpu, r16_hl); break; // DEC hl
     case 0x3B: dec_r16(cpu, r16_sp); break; // DEC sp
+
+    case 0x09: add_hl_r16(cpu, r16_bc); break; // ADD hl, bc
+    case 0x19: add_hl_r16(cpu, r16_de); break; // ADD hl, de
+    case 0x29: add_hl_r16(cpu, r16_hl); break; // ADD hl, hl
+    case 0x39: add_hl_r16(cpu, r16_sp); break; // ADD hl, sp
 
     default: exit(1);
     }
