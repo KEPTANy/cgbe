@@ -47,6 +47,7 @@ struct sm83 {
     struct bus *bus;
 
     uint8_t opcode;
+    uint16_t tmp; // some instructions use it to store temporary data
     size_t m_cycle;
 };
 

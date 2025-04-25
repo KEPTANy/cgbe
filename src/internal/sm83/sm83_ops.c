@@ -129,6 +129,32 @@ static void ld_a_r16mem(struct sm83 *cpu, enum r16mem source) {
     }
 }
 
+// LD [imm16], sp
+// Opcode: 0b00001000
+// M-cycles: 5
+// Flags: ----
+static void ld_imm16_sp(struct sm83 *cpu) {
+    assert(cpu->m_cycle < 5);
+
+    switch (cpu->m_cycle++) {
+    case 0:
+        cpu->tmp = bus_read(cpu->bus, cpu->regs.pc++);
+        break;
+    case 1:
+        cpu->tmp += bus_read(cpu->bus, cpu->regs.pc++) * 256;
+        break;
+    case 2:
+        bus_write(cpu->bus, cpu->tmp++, cpu->regs.pc & 0xFF);
+        break;
+    case 3:
+        bus_write(cpu->bus, cpu->tmp, cpu->regs.pc / 256);
+        break;
+    case 4:
+        prefetch(cpu);
+        break;
+    }
+}
+
 void sm83_m_cycle(struct sm83 *cpu) {
     switch (cpu->opcode) {
     case 0x00: // NOP
@@ -172,6 +198,10 @@ void sm83_m_cycle(struct sm83 *cpu) {
         break;
     case 0x3A: // LD a, [hl-]
         ld_a_r16mem(cpu, r16mem_hld);
+        break;
+
+    case 0x08: // LD [imm16], sp
+        ld_imm16_sp(cpu);
         break;
 
     default:
