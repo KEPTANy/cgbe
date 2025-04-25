@@ -127,6 +127,26 @@ static void inc_r16(struct sm83 *cpu, enum r16 reg) {
     }
 }
 
+// DEC r16
+// Opcode: 0b00xx1011
+// M-cycles: 2
+// Flags: ----
+static void dec_r16(struct sm83 *cpu, enum r16 reg) {
+    assert(cpu->m_cycle < 2);
+
+    switch (cpu->m_cycle++) {
+    case 0:
+        switch (reg) {
+        case r16_bc: cpu->regs.bc--; break;
+        case r16_de: cpu->regs.de--; break;
+        case r16_hl: cpu->regs.hl--; break;
+        case r16_sp: cpu->regs.sp--; break;
+        }
+        break;
+    case 1: prefetch(cpu); break;
+    }
+}
+
 void sm83_m_cycle(struct sm83 *cpu) {
     switch (cpu->opcode) {
     case 0x00: nop(cpu); break; // NOP
@@ -152,6 +172,11 @@ void sm83_m_cycle(struct sm83 *cpu) {
     case 0x13: inc_r16(cpu, r16_de); break; // INC de
     case 0x23: inc_r16(cpu, r16_hl); break; // INC hl
     case 0x33: inc_r16(cpu, r16_sp); break; // INC sp
+
+    case 0x0B: dec_r16(cpu, r16_bc); break; // DEC bc
+    case 0x1B: dec_r16(cpu, r16_de); break; // DEC de
+    case 0x2B: dec_r16(cpu, r16_hl); break; // DEC hl
+    case 0x3B: dec_r16(cpu, r16_sp); break; // DEC sp
 
     default: exit(1);
     }
