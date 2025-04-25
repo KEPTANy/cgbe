@@ -99,6 +99,36 @@ static void ld_r16mem_a(struct sm83 *cpu, enum r16mem dest) {
     }
 }
 
+// LD a, [r16mem]
+// Opcode: 0b00xx1010
+// M-cycles: 2
+// Flags: ----
+static void ld_a_r16mem(struct sm83 *cpu, enum r16mem source) {
+    assert(cpu->m_cycle < 2);
+
+    switch (cpu->m_cycle++) {
+    case 0:
+        switch (source) {
+        case r16mem_bc:
+            cpu->regs.a = bus_read(cpu->bus, cpu->regs.bc);
+            break;
+        case r16mem_de:
+            cpu->regs.a = bus_read(cpu->bus, cpu->regs.de);
+            break;
+        case r16mem_hli:
+            cpu->regs.a = bus_read(cpu->bus, cpu->regs.hl++);
+            break;
+        case r16mem_hld:
+            cpu->regs.a = bus_read(cpu->bus, cpu->regs.hl--);
+            break;
+        }
+        break;
+    case 1:
+        prefetch(cpu);
+        break;
+    }
+}
+
 void sm83_m_cycle(struct sm83 *cpu) {
     switch (cpu->opcode) {
     case 0x00: // NOP
@@ -129,6 +159,19 @@ void sm83_m_cycle(struct sm83 *cpu) {
         break;
     case 0x32: // LD [hl-], a
         ld_r16mem_a(cpu, r16mem_hld);
+        break;
+
+    case 0x0A: // LD a, [bc]
+        ld_a_r16mem(cpu, r16mem_bc);
+        break;
+    case 0x1A: // LD a, [de]
+        ld_a_r16mem(cpu, r16mem_de);
+        break;
+    case 0xA2: // LD a, [hl+]
+        ld_a_r16mem(cpu, r16mem_hli);
+        break;
+    case 0x3A: // LD a, [hl-]
+        ld_a_r16mem(cpu, r16mem_hld);
         break;
 
     default:
