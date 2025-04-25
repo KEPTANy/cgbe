@@ -16,7 +16,7 @@ DEPS        = $(OBJS:.o=.d)
 TARGET      = $(BIN_DIR)/$(NAME)
 
 CC          = clang
-CFLAGS      = -O2 -Wall -Wextra -std=c11 -pedantic-errors
+CFLAGS      = -O2 -Wall -Wextra -std=c23 -pedantic-errors
 CPPFLAGS    = -MMD -MP -I$(INCLUDE_DIR)/
 
 RM          = rm -f
