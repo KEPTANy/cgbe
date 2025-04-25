@@ -5,10 +5,8 @@
 
 static enum cartridge_mapper_type cartridge_mapper_type(uint8_t cart_type) {
     switch (cart_type) {
-    case 0x00:
-        return CMT_ROM_ONLY;
-    default:
-        return CMT_UNSUPPORTED;
+    case 0x00: return CMT_ROM_ONLY;
+    default: return CMT_UNSUPPORTED;
     }
 }
 
@@ -45,16 +43,12 @@ void cartridge_delete(struct cartridge *cart) {
     }
 
     switch (cart->mapper) {
-    case CMT_ROM_ONLY:
-        free(cart);
-        return;
-    case CMT_UNSUPPORTED:
-        exit(1);
+    case CMT_ROM_ONLY: free(cart); return;
+    case CMT_UNSUPPORTED: exit(1);
     }
 }
 
-void cartridge_header_print_info(const struct cartridge_header *cart,
-                                 FILE *out) {
+void cartridge_header_print_info(const struct cartridge_header *cart, FILE *out) {
     assert(cart != NULL);
     assert(out != NULL);
 
@@ -82,20 +76,16 @@ uint8_t cartridge_rom_read(struct cartridge *cart, uint16_t address) {
     case CMT_ROM_ONLY:
         return address >= 0x4000 ? cart->bank_01_nn[address - 0x4000]
                                  : cart->bank_00[address - 0x0000];
-    case CMT_UNSUPPORTED:
-        exit(1);
+    case CMT_UNSUPPORTED: exit(1);
     }
 }
 
-void cartridge_rom_write(struct cartridge *cart, uint16_t address,
-                         uint8_t val) {
+void cartridge_rom_write(struct cartridge *cart, uint16_t address, uint8_t val) {
     assert(cart != NULL);
     assert(0x0000 <= address && address <= 0x7FFF);
 
     switch (cart->mapper) {
-    case CMT_ROM_ONLY:
-        return;
-    case CMT_UNSUPPORTED:
-        exit(1);
+    case CMT_ROM_ONLY: return;
+    case CMT_UNSUPPORTED: exit(1);
     }
 }

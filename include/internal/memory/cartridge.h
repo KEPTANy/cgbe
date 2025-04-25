@@ -46,8 +46,7 @@ struct cartridge *cartridge_new(const char *fname);
 void cartridge_delete(struct cartridge *cart);
 
 // Prints header.
-void cartridge_header_print_info(const struct cartridge_header *cart,
-                                 FILE *out);
+void cartridge_header_print_info(const struct cartridge_header *cart, FILE *out);
 
 // Reads data from rom of a cartridge.
 uint8_t cartridge_rom_read(struct cartridge *cart, uint16_t address);

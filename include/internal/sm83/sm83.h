@@ -7,22 +7,22 @@
 #include "util.h"
 
 #if defined(LITTLE_ENDIAN)
-#define SM83_REGISTER_PAIR(hi, lo)                                             \
-    union {                                                                    \
-        uint16_t hi##lo;                                                       \
-        struct {                                                               \
-            uint8_t lo;                                                        \
-            uint8_t hi;                                                        \
-        };                                                                     \
+#define SM83_REGISTER_PAIR(hi, lo)                                                                 \
+    union {                                                                                        \
+        uint16_t hi##lo;                                                                           \
+        struct {                                                                                   \
+            uint8_t lo;                                                                            \
+            uint8_t hi;                                                                            \
+        };                                                                                         \
     }
 #elif defined(BIG_ENDIAN)
-#define SM83_REGISTER_PAIR(hi, lo)                                             \
-    union {                                                                    \
-        uint16_t hi##lo;                                                       \
-        struct {                                                               \
-            uint8_t hi;                                                        \
-            uint8_t lo;                                                        \
-        };                                                                     \
+#define SM83_REGISTER_PAIR(hi, lo)                                                                 \
+    union {                                                                                        \
+        uint16_t hi##lo;                                                                           \
+        struct {                                                                                   \
+            uint8_t hi;                                                                            \
+            uint8_t lo;                                                                            \
+        };                                                                                         \
     }
 #endif
 
