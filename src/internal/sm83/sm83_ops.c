@@ -182,6 +182,114 @@ static void add_hl_r16(struct sm83 *cpu, enum r16 reg) {
     }
 }
 
+// INC r8
+// Opcode: 0b00xxx100
+// M-cycles: 1/3 (3 for [hl])
+// Flags: Z0H-
+static void inc_r8(struct sm83 *cpu, enum r8 reg) {
+    assert(cpu->m_cycle < 1 || (reg == r8_hl && cpu->m_cycle < 3));
+
+    if (reg == r8_hl) {
+        switch (cpu->m_cycle++) {
+        case 0: cpu->tmp = bus_read(cpu->bus, cpu->regs.hl) + 1; break;
+        case 1:
+            cpu->regs.f &= ~(SM83_N_MASK & SM83_H_MASK & SM83_Z_MASK); // N = 0, H = 0, Z = 0
+
+            bus_write(cpu->bus, cpu->regs.hl, (uint8_t)cpu->tmp);
+
+            if ((uint8_t)cpu->tmp == 0) {
+                cpu->regs.f |= SM83_Z_MASK;
+            }
+
+            if (cpu->tmp & (1 << 4)) {
+                cpu->regs.f |= SM83_H_MASK;
+            }
+
+            break;
+        case 2: prefetch(cpu); break;
+        }
+    } else {
+        cpu->regs.f &= ~(SM83_N_MASK & SM83_H_MASK & SM83_Z_MASK); // N = 0, H = 0, Z = 0
+
+        uint8_t res;
+        switch (reg) {
+        case r8_a: res = cpu->regs.a++; break;
+        case r8_b: res = cpu->regs.b++; break;
+        case r8_c: res = cpu->regs.c++; break;
+        case r8_d: res = cpu->regs.d++; break;
+        case r8_e: res = cpu->regs.e++; break;
+        case r8_h: res = cpu->regs.h++; break;
+        case r8_l: res = cpu->regs.l++; break;
+        default: unreachable();
+        }
+
+        if (res == 0) {
+            cpu->regs.f |= SM83_Z_MASK;
+        }
+
+        if (res & (1 << 4)) {
+            cpu->regs.f |= SM83_H_MASK;
+        }
+
+        prefetch(cpu);
+    }
+}
+
+// DEC r8
+// Opcode: 0b00xxx101
+// M-cycles: 1/3 (3 for [hl])
+// Flags: Z0H-
+static void dec_r8(struct sm83 *cpu, enum r8 reg) {
+    assert(cpu->m_cycle < 1 || (reg == r8_hl && cpu->m_cycle < 3));
+
+    if (reg == r8_hl) {
+        switch (cpu->m_cycle++) {
+        case 0: cpu->tmp = bus_read(cpu->bus, cpu->regs.hl) - 1; break;
+        case 1:
+            cpu->regs.f &= ~(SM83_H_MASK & SM83_Z_MASK); // H = 0, Z = 0
+            cpu->regs.f |= SM83_N_MASK;
+
+            bus_write(cpu->bus, cpu->regs.hl, (uint8_t)cpu->tmp);
+
+            if ((uint8_t)cpu->tmp == 0) {
+                cpu->regs.f |= SM83_Z_MASK;
+            }
+
+            if (cpu->tmp & (1 << 4)) {
+                cpu->regs.f |= SM83_H_MASK;
+            }
+
+            break;
+        case 2: prefetch(cpu); break;
+        }
+    } else {
+        cpu->regs.f &= ~(SM83_H_MASK & SM83_Z_MASK); // H = 0, Z = 0
+        cpu->regs.f |= SM83_N_MASK;
+
+        uint8_t res;
+        switch (reg) {
+        case r8_a: res = cpu->regs.a--; break;
+        case r8_b: res = cpu->regs.b--; break;
+        case r8_c: res = cpu->regs.c--; break;
+        case r8_d: res = cpu->regs.d--; break;
+        case r8_e: res = cpu->regs.e--; break;
+        case r8_h: res = cpu->regs.h--; break;
+        case r8_l: res = cpu->regs.l--; break;
+        default: unreachable();
+        }
+
+        if (res == 0) {
+            cpu->regs.f |= SM83_Z_MASK;
+        }
+
+        if (res & (1 << 4)) {
+            cpu->regs.f |= SM83_H_MASK;
+        }
+
+        prefetch(cpu);
+    }
+}
+
 void sm83_m_cycle(struct sm83 *cpu) {
     switch (cpu->opcode) {
     case 0x00: nop(cpu); break; // NOP
@@ -217,6 +325,24 @@ void sm83_m_cycle(struct sm83 *cpu) {
     case 0x19: add_hl_r16(cpu, r16_de); break; // ADD hl, de
     case 0x29: add_hl_r16(cpu, r16_hl); break; // ADD hl, hl
     case 0x39: add_hl_r16(cpu, r16_sp); break; // ADD hl, sp
+
+    case 0x04: inc_r8(cpu, r8_b); break; // INC b
+    case 0x0C: inc_r8(cpu, r8_c); break; // INC c
+    case 0x14: inc_r8(cpu, r8_d); break; // INC d
+    case 0x1C: inc_r8(cpu, r8_e); break; // INC e
+    case 0x24: inc_r8(cpu, r8_h); break; // INC h
+    case 0x2C: inc_r8(cpu, r8_l); break; // INC l
+    case 0x34: inc_r8(cpu, r8_hl); break; // INC [hl]
+    case 0x3C: inc_r8(cpu, r8_a); break; // INC a
+
+    case 0x05: dec_r8(cpu, r8_b); break; // DEC b
+    case 0x0D: dec_r8(cpu, r8_c); break; // DEC c
+    case 0x15: dec_r8(cpu, r8_d); break; // DEC d
+    case 0x1D: dec_r8(cpu, r8_e); break; // DEC e
+    case 0x25: dec_r8(cpu, r8_h); break; // DEC h
+    case 0x2D: dec_r8(cpu, r8_l); break; // DEC l
+    case 0x35: dec_r8(cpu, r8_hl); break; // DEC [hl]
+    case 0x3D: dec_r8(cpu, r8_a); break; // DEC a
 
     default: exit(1);
     }
