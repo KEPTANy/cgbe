@@ -290,6 +290,33 @@ static void dec_r8(struct sm83 *cpu, enum r8 reg) {
     }
 }
 
+// LD r8, imm8
+// Opcode: 0b00xxx110
+// M-cycles: 2/3 (3 for [hl])
+// Flags: ----
+static void ld_r8_imm8(struct sm83 *cpu, enum r8 reg) {
+    assert(cpu->m_cycle < 2 || (reg == r8_hl && cpu->m_cycle < 3));
+
+    switch (cpu->m_cycle) {
+    case 0: cpu->tmp = bus_read(cpu->bus, cpu->regs.pc++); break;
+    case 1:
+        switch (reg) {
+        case r8_a: cpu->regs.a = (uint8_t)cpu->tmp; break;
+        case r8_b: cpu->regs.b = (uint8_t)cpu->tmp; break;
+        case r8_c: cpu->regs.c = (uint8_t)cpu->tmp; break;
+        case r8_d: cpu->regs.d = (uint8_t)cpu->tmp; break;
+        case r8_e: cpu->regs.e = (uint8_t)cpu->tmp; break;
+        case r8_h: cpu->regs.h = (uint8_t)cpu->tmp; break;
+        case r8_l: cpu->regs.l = (uint8_t)cpu->tmp; break;
+        case r8_hl:
+            bus_write(cpu->bus, cpu->regs.hl, (uint8_t)cpu->tmp);
+            return; // this return delays prefetch for 1 m-cycle
+        }
+        [[fallthrough]];
+    case 2: prefetch(cpu); break; // executed on the 2nd m-cycle for all regs other than [hl]
+    }
+}
+
 void sm83_m_cycle(struct sm83 *cpu) {
     switch (cpu->opcode) {
     case 0x00: nop(cpu); break; // NOP
@@ -326,23 +353,32 @@ void sm83_m_cycle(struct sm83 *cpu) {
     case 0x29: add_hl_r16(cpu, r16_hl); break; // ADD hl, hl
     case 0x39: add_hl_r16(cpu, r16_sp); break; // ADD hl, sp
 
-    case 0x04: inc_r8(cpu, r8_b); break; // INC b
-    case 0x0C: inc_r8(cpu, r8_c); break; // INC c
-    case 0x14: inc_r8(cpu, r8_d); break; // INC d
-    case 0x1C: inc_r8(cpu, r8_e); break; // INC e
-    case 0x24: inc_r8(cpu, r8_h); break; // INC h
-    case 0x2C: inc_r8(cpu, r8_l); break; // INC l
+    case 0x04: inc_r8(cpu, r8_b); break;  // INC b
+    case 0x0C: inc_r8(cpu, r8_c); break;  // INC c
+    case 0x14: inc_r8(cpu, r8_d); break;  // INC d
+    case 0x1C: inc_r8(cpu, r8_e); break;  // INC e
+    case 0x24: inc_r8(cpu, r8_h); break;  // INC h
+    case 0x2C: inc_r8(cpu, r8_l); break;  // INC l
     case 0x34: inc_r8(cpu, r8_hl); break; // INC [hl]
-    case 0x3C: inc_r8(cpu, r8_a); break; // INC a
+    case 0x3C: inc_r8(cpu, r8_a); break;  // INC a
 
-    case 0x05: dec_r8(cpu, r8_b); break; // DEC b
-    case 0x0D: dec_r8(cpu, r8_c); break; // DEC c
-    case 0x15: dec_r8(cpu, r8_d); break; // DEC d
-    case 0x1D: dec_r8(cpu, r8_e); break; // DEC e
-    case 0x25: dec_r8(cpu, r8_h); break; // DEC h
-    case 0x2D: dec_r8(cpu, r8_l); break; // DEC l
+    case 0x05: dec_r8(cpu, r8_b); break;  // DEC b
+    case 0x0D: dec_r8(cpu, r8_c); break;  // DEC c
+    case 0x15: dec_r8(cpu, r8_d); break;  // DEC d
+    case 0x1D: dec_r8(cpu, r8_e); break;  // DEC e
+    case 0x25: dec_r8(cpu, r8_h); break;  // DEC h
+    case 0x2D: dec_r8(cpu, r8_l); break;  // DEC l
     case 0x35: dec_r8(cpu, r8_hl); break; // DEC [hl]
-    case 0x3D: dec_r8(cpu, r8_a); break; // DEC a
+    case 0x3D: dec_r8(cpu, r8_a); break;  // DEC a
+
+    case 0x06: ld_r8_imm8(cpu, r8_b); break;  // LD b, imm8
+    case 0x0E: ld_r8_imm8(cpu, r8_c); break;  // LD c, imm8
+    case 0x16: ld_r8_imm8(cpu, r8_d); break;  // LD d, imm8
+    case 0x1E: ld_r8_imm8(cpu, r8_e); break;  // LD e, imm8
+    case 0x26: ld_r8_imm8(cpu, r8_h); break;  // LD h, imm8
+    case 0x2E: ld_r8_imm8(cpu, r8_l); break;  // LD l, imm8
+    case 0x36: ld_r8_imm8(cpu, r8_hl); break; // LD [hl], imm8
+    case 0x3E: ld_r8_imm8(cpu, r8_a); break;  // LD a, imm8
 
     default: exit(1);
     }
