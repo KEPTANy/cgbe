@@ -367,6 +367,45 @@ static void rra(struct sm83 *cpu) {
     prefetch(cpu);
 }
 
+// DAA
+// Opcode: 0b00100111
+// M-cycles: 1
+// Flags: Z-0C
+static void daa(struct sm83 *cpu) {
+    assert(cpu->m_cycle < 1);
+
+    // Based on code from here: https://ehaskins.com/2018-01-30%20Z80%20DAA/
+    // And notes from here: https://rgbds.gbdev.io/docs/v0.9.1/gbz80.7#DAA
+
+    bool H_flag = cpu->regs.f & SM83_H_MASK;
+    bool N_flag = cpu->regs.f & SM83_N_MASK;
+    bool C_flag = cpu->regs.f & SM83_C_MASK;
+    uint8_t val = cpu->regs.a;
+
+    uint8_t flags = 0;
+    uint8_t adjustment = 0;
+    if (H_flag || (!N_flag && (val & 0xF) > 0x9)) {
+        adjustment |= 0x06;
+    }
+
+    if (C_flag || (!N_flag && val > 0x99)) {
+        adjustment |= 0x60;
+        flags |= SM83_C_MASK;
+    }
+
+    val += N_flag ? -adjustment : adjustment;
+
+    if (val == 0) {
+        flags |= SM83_Z_MASK;
+    }
+
+    cpu->regs.a = val;
+    cpu->regs.f &= ~(SM83_Z_MASK | SM83_H_MASK | SM83_C_MASK);
+    cpu->regs.f |= flags;
+
+    prefetch(cpu);
+}
+
 void sm83_m_cycle(struct sm83 *cpu) {
     switch (cpu->opcode) {
     case 0x00: nop(cpu); break; // NOP
@@ -434,6 +473,7 @@ void sm83_m_cycle(struct sm83 *cpu) {
     case 0x0F: rrca(cpu); break; // RRCA
     case 0x17: rla(cpu); break; // RLA
     case 0x1F: rra(cpu); break; // RRA
+    case 0x27: daa(cpu); break; // DAA
 
     default: exit(1);
     }
