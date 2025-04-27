@@ -341,6 +341,32 @@ static void rrca(struct sm83 *cpu) {
     prefetch(cpu);
 }
 
+// RLA
+// Opcode: 0b00010111
+// M-cycles: 1
+// Flags: 000C
+static void rla(struct sm83 *cpu) {
+    assert(cpu->m_cycle < 1);
+
+    bool c = cpu->regs.f & SM83_C_MASK;
+    cpu->regs.f = (cpu->regs.a & (1 << 7)) ? SM83_C_MASK : 0;
+    cpu->regs.a = (cpu->regs.a << 1) | (c ? 1 : 0);
+    prefetch(cpu);
+}
+
+// RRA
+// Opcode: 0b00011111
+// M-cycles: 1
+// Flags: 000C
+static void rra(struct sm83 *cpu) {
+    assert(cpu->m_cycle < 1);
+
+    bool c = cpu->regs.f & SM83_C_MASK;
+    cpu->regs.f = (cpu->regs.a & (1 << 7)) ? SM83_C_MASK : 0;
+    cpu->regs.a = (cpu->regs.a << 1) | (c ? (1 << 7) : 0);
+    prefetch(cpu);
+}
+
 void sm83_m_cycle(struct sm83 *cpu) {
     switch (cpu->opcode) {
     case 0x00: nop(cpu); break; // NOP
@@ -406,6 +432,8 @@ void sm83_m_cycle(struct sm83 *cpu) {
 
     case 0x07: rlca(cpu); break; // RLCA
     case 0x0F: rrca(cpu); break; // RRCA
+    case 0x17: rla(cpu); break; // RLA
+    case 0x1F: rra(cpu); break; // RRA
 
     default: exit(1);
     }
