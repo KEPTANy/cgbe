@@ -406,6 +406,42 @@ static void daa(struct sm83 *cpu) {
     prefetch(cpu);
 }
 
+// CPL
+// Opcode: 0b00101111
+// M-cycles: 1
+// Flags: -11-
+static void cpl(struct sm83 *cpu) {
+    assert(cpu->m_cycle < 1);
+
+    cpu->regs.a = ~cpu->regs.a;
+    cpu->regs.f |= SM83_N_MASK | SM83_H_MASK;
+    prefetch(cpu);
+}
+
+// SCF
+// Opcode: 0b00110111
+// M-cycles: 1
+// Flags: -001
+static void scf(struct sm83 *cpu) {
+    assert(cpu->m_cycle < 1);
+
+    cpu->regs.f &= ~(SM83_N_MASK | SM83_H_MASK);
+    cpu->regs.f |= SM83_C_MASK;
+    prefetch(cpu);
+}
+
+// CCF
+// Opcode: 0b00111111
+// M-cycles: 1
+// Flags: -001
+static void ccf(struct sm83 *cpu) {
+    assert(cpu->m_cycle < 1);
+
+    cpu->regs.f &= ~(SM83_N_MASK | SM83_H_MASK);
+    cpu->regs.f ^= SM83_C_MASK;
+    prefetch(cpu);
+}
+
 void sm83_m_cycle(struct sm83 *cpu) {
     switch (cpu->opcode) {
     case 0x00: nop(cpu); break; // NOP
@@ -471,9 +507,12 @@ void sm83_m_cycle(struct sm83 *cpu) {
 
     case 0x07: rlca(cpu); break; // RLCA
     case 0x0F: rrca(cpu); break; // RRCA
-    case 0x17: rla(cpu); break; // RLA
-    case 0x1F: rra(cpu); break; // RRA
-    case 0x27: daa(cpu); break; // DAA
+    case 0x17: rla(cpu); break;  // RLA
+    case 0x1F: rra(cpu); break;  // RRA
+    case 0x27: daa(cpu); break;  // DAA
+    case 0x2F: cpl(cpu); break;  // CPL
+    case 0x37: scf(cpu); break;  // SCF
+    case 0x3F: ccf(cpu); break;  // CCF
 
     default: exit(1);
     }
