@@ -561,6 +561,8 @@ void sm83_m_cycle(struct sm83 *cpu) {
     case 0x30: jr_cond_imm8(cpu, cond_nc); break; // JR nc, imm8
     case 0x38: jr_cond_imm8(cpu, cond_c); break;  // JR c, imm8
 
+    case 0x10: // STOP (implement later)
+    case 0x76: // HALT (implement later)
     default: exit(1);
     }
 }
