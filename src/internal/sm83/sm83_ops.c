@@ -442,6 +442,47 @@ static void ccf(struct sm83 *cpu) {
     prefetch(cpu);
 }
 
+// JR imm8
+// Opcode: 0x00011000
+// M-cycles: 3
+// Flags: ----
+static void jr_imm8(struct sm83 *cpu) {
+    assert(cpu->m_cycle < 3);
+
+    switch (cpu->m_cycle++) {
+    case 0: cpu->regs.pc += (int8_t)bus_read(cpu->bus, cpu->regs.pc++); break;
+    // case 1:
+    case 2: prefetch(cpu); break;
+    }
+}
+
+// JR cond, imm8
+// Opcode: 0x001xx000
+// M-cycles: 2/3 (2 if cond is true, 3 if cond is false)
+// Flags: ----
+static void jr_cond_imm8(struct sm83 *cpu, enum cond cc) {
+    bool z = cpu->regs.f & SM83_Z_MASK;
+    bool c = cpu->regs.f & SM83_C_MASK;
+
+    bool cond = (cc == cond_z && z) || (cc == cond_nz && !z) || (cc == cond_c && c) ||
+                (cc == cond_nc && !c);
+
+    assert(cpu->m_cycle < 2 || (cond && cpu->m_cycle < 3));
+
+    if (cond) {
+        switch (cpu->m_cycle++) {
+        case 0: cpu->regs.pc += (int8_t)bus_read(cpu->bus, cpu->regs.pc++); break;
+        // case 1:
+        case 2: prefetch(cpu); break;
+        }
+    } else {
+        switch (cpu->m_cycle++) {
+        case 0: bus_read(cpu->bus, cpu->regs.pc++); break;
+        case 1: prefetch(cpu); break;
+        }
+    }
+}
+
 void sm83_m_cycle(struct sm83 *cpu) {
     switch (cpu->opcode) {
     case 0x00: nop(cpu); break; // NOP
@@ -513,6 +554,12 @@ void sm83_m_cycle(struct sm83 *cpu) {
     case 0x2F: cpl(cpu); break;  // CPL
     case 0x37: scf(cpu); break;  // SCF
     case 0x3F: ccf(cpu); break;  // CCF
+
+    case 0x18: jr_imm8(cpu); break;               // JR imm8
+    case 0x20: jr_cond_imm8(cpu, cond_nz); break; // JR nz, imm8
+    case 0x28: jr_cond_imm8(cpu, cond_z); break;  // JR z, imm8
+    case 0x30: jr_cond_imm8(cpu, cond_nc); break; // JR nc, imm8
+    case 0x38: jr_cond_imm8(cpu, cond_c); break;  // JR c, imm8
 
     default: exit(1);
     }
