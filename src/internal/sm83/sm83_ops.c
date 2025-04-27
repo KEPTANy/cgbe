@@ -483,6 +483,53 @@ static void jr_cond_imm8(struct sm83 *cpu, enum cond cc) {
     }
 }
 
+// LD r8, r8
+// Opcode: 0x01dddsss (d for dest, s for source)
+// M-cycles: 1/2 (2 if either dest or source is [hl])
+// Flags: ----
+static void ld_r8_r8(struct sm83 *cpu, enum r8 dest, enum r8 source) {
+    assert(cpu->m_cycle < 1 || ((dest == r8_hl || source == r8_hl) && cpu->m_cycle < 2));
+
+    bool one_more = false;
+    switch (cpu->m_cycle++) {
+    case 0:
+        switch (source) {
+        case r8_a: cpu->tmp = cpu->regs.a; break;
+        case r8_b: cpu->tmp = cpu->regs.b; break;
+        case r8_c: cpu->tmp = cpu->regs.c; break;
+        case r8_d: cpu->tmp = cpu->regs.d; break;
+        case r8_e: cpu->tmp = cpu->regs.e; break;
+        case r8_h: cpu->tmp = cpu->regs.h; break;
+        case r8_l: cpu->tmp = cpu->regs.l; break;
+        case r8_hl:
+            cpu->tmp = bus_read(cpu->bus, cpu->regs.hl);
+            one_more = true;
+            return;
+        }
+
+        switch (dest) {
+        case r8_a: cpu->regs.a = cpu->tmp; break;
+        case r8_b: cpu->regs.b = cpu->tmp; break;
+        case r8_c: cpu->regs.c = cpu->tmp; break;
+        case r8_d: cpu->regs.d = cpu->tmp; break;
+        case r8_e: cpu->regs.e = cpu->tmp; break;
+        case r8_h: cpu->regs.h = cpu->tmp; break;
+        case r8_l: cpu->regs.l = cpu->tmp; break;
+        case r8_hl:
+            bus_write(cpu->bus, cpu->regs.hl, cpu->tmp);
+            one_more = true;
+            return;
+        }
+
+        if (one_more) {
+            return;
+        }
+
+        [[fallthrough]];
+    case 1: prefetch(cpu); break;
+    }
+}
+
 void sm83_m_cycle(struct sm83 *cpu) {
     switch (cpu->opcode) {
     case 0x00: nop(cpu); break; // NOP
@@ -560,6 +607,78 @@ void sm83_m_cycle(struct sm83 *cpu) {
     case 0x28: jr_cond_imm8(cpu, cond_z); break;  // JR z, imm8
     case 0x30: jr_cond_imm8(cpu, cond_nc); break; // JR nc, imm8
     case 0x38: jr_cond_imm8(cpu, cond_c); break;  // JR c, imm8
+
+    case 0x40: ld_r8_r8(cpu, r8_b, r8_b); break;  // LD b, b
+    case 0x41: ld_r8_r8(cpu, r8_b, r8_c); break;  // LD b, c
+    case 0x42: ld_r8_r8(cpu, r8_b, r8_d); break;  // LD b, d
+    case 0x43: ld_r8_r8(cpu, r8_b, r8_e); break;  // LD b, e
+    case 0x44: ld_r8_r8(cpu, r8_b, r8_h); break;  // LD b, h
+    case 0x45: ld_r8_r8(cpu, r8_b, r8_l); break;  // LD b, l
+    case 0x46: ld_r8_r8(cpu, r8_b, r8_hl); break; // LD b, [hl]
+    case 0x47: ld_r8_r8(cpu, r8_b, r8_a); break;  // LD b, a
+
+    case 0x48: ld_r8_r8(cpu, r8_c, r8_b); break;  // LD c, b
+    case 0x49: ld_r8_r8(cpu, r8_c, r8_c); break;  // LD c, c
+    case 0x4A: ld_r8_r8(cpu, r8_c, r8_d); break;  // LD c, d
+    case 0x4B: ld_r8_r8(cpu, r8_c, r8_e); break;  // LD c, e
+    case 0x4C: ld_r8_r8(cpu, r8_c, r8_h); break;  // LD c, h
+    case 0x4D: ld_r8_r8(cpu, r8_c, r8_l); break;  // LD c, l
+    case 0x4E: ld_r8_r8(cpu, r8_c, r8_hl); break; // LD c, [hl]
+    case 0x4F: ld_r8_r8(cpu, r8_c, r8_a); break;  // LD c, a
+
+    case 0x50: ld_r8_r8(cpu, r8_d, r8_b); break;  // LD d, b
+    case 0x51: ld_r8_r8(cpu, r8_d, r8_c); break;  // LD d, c
+    case 0x52: ld_r8_r8(cpu, r8_d, r8_d); break;  // LD d, d
+    case 0x53: ld_r8_r8(cpu, r8_d, r8_e); break;  // LD d, e
+    case 0x54: ld_r8_r8(cpu, r8_d, r8_h); break;  // LD d, h
+    case 0x55: ld_r8_r8(cpu, r8_d, r8_l); break;  // LD d, l
+    case 0x56: ld_r8_r8(cpu, r8_d, r8_hl); break; // LD d, [hl]
+    case 0x57: ld_r8_r8(cpu, r8_d, r8_a); break;  // LD d, a
+
+    case 0x58: ld_r8_r8(cpu, r8_e, r8_b); break;  // LD e, b
+    case 0x59: ld_r8_r8(cpu, r8_e, r8_c); break;  // LD e, c
+    case 0x5A: ld_r8_r8(cpu, r8_e, r8_d); break;  // LD e, d
+    case 0x5B: ld_r8_r8(cpu, r8_e, r8_e); break;  // LD e, e
+    case 0x5C: ld_r8_r8(cpu, r8_e, r8_h); break;  // LD e, h
+    case 0x5D: ld_r8_r8(cpu, r8_e, r8_l); break;  // LD e, l
+    case 0x5E: ld_r8_r8(cpu, r8_e, r8_hl); break; // LD e, [hl]
+    case 0x5F: ld_r8_r8(cpu, r8_e, r8_a); break;  // LD e, a
+
+    case 0x60: ld_r8_r8(cpu, r8_h, r8_b); break;  // LD h, b
+    case 0x61: ld_r8_r8(cpu, r8_h, r8_c); break;  // LD h, c
+    case 0x62: ld_r8_r8(cpu, r8_h, r8_d); break;  // LD h, d
+    case 0x63: ld_r8_r8(cpu, r8_h, r8_e); break;  // LD h, e
+    case 0x64: ld_r8_r8(cpu, r8_h, r8_h); break;  // LD h, h
+    case 0x65: ld_r8_r8(cpu, r8_h, r8_l); break;  // LD h, l
+    case 0x66: ld_r8_r8(cpu, r8_h, r8_hl); break; // LD h, [hl]
+    case 0x67: ld_r8_r8(cpu, r8_h, r8_a); break;  // LD h, a
+
+    case 0x68: ld_r8_r8(cpu, r8_l, r8_b); break;  // LD l, b
+    case 0x69: ld_r8_r8(cpu, r8_l, r8_c); break;  // LD l, c
+    case 0x6A: ld_r8_r8(cpu, r8_l, r8_d); break;  // LD l, d
+    case 0x6B: ld_r8_r8(cpu, r8_l, r8_e); break;  // LD l, e
+    case 0x6C: ld_r8_r8(cpu, r8_l, r8_h); break;  // LD l, h
+    case 0x6D: ld_r8_r8(cpu, r8_l, r8_l); break;  // LD l, l
+    case 0x6E: ld_r8_r8(cpu, r8_l, r8_hl); break; // LD l, [hl]
+    case 0x6F: ld_r8_r8(cpu, r8_l, r8_a); break;  // LD l, a
+
+    case 0x70: ld_r8_r8(cpu, r8_hl, r8_b); break; // LD [hl], b
+    case 0x71: ld_r8_r8(cpu, r8_hl, r8_c); break; // LD [hl], c
+    case 0x72: ld_r8_r8(cpu, r8_hl, r8_d); break; // LD [hl], d
+    case 0x73: ld_r8_r8(cpu, r8_hl, r8_e); break; // LD [hl], e
+    case 0x74: ld_r8_r8(cpu, r8_hl, r8_h); break; // LD [hl], h
+    case 0x75: ld_r8_r8(cpu, r8_hl, r8_l); break; // LD [hl], l
+
+    case 0x77: ld_r8_r8(cpu, r8_hl, r8_a); break; // LD [hl], a
+
+    case 0x78: ld_r8_r8(cpu, r8_a, r8_b); break;  // LD a, b
+    case 0x79: ld_r8_r8(cpu, r8_a, r8_c); break;  // LD a, c
+    case 0x7A: ld_r8_r8(cpu, r8_a, r8_d); break;  // LD a, d
+    case 0x7B: ld_r8_r8(cpu, r8_a, r8_e); break;  // LD a, e
+    case 0x7C: ld_r8_r8(cpu, r8_a, r8_h); break;  // LD a, h
+    case 0x7D: ld_r8_r8(cpu, r8_a, r8_l); break;  // LD a, l
+    case 0x7E: ld_r8_r8(cpu, r8_a, r8_hl); break; // LD a, [hl]
+    case 0x7F: ld_r8_r8(cpu, r8_a, r8_a); break;  // LD a, a
 
     case 0x10: // STOP (implement later)
     case 0x76: // HALT (implement later)
