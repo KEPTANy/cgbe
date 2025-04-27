@@ -317,6 +317,30 @@ static void ld_r8_imm8(struct sm83 *cpu, enum r8 reg) {
     }
 }
 
+// RLCA
+// Opcode: 0b00000111
+// M-cycles: 1
+// Flags: 000C
+static void rlca(struct sm83 *cpu) {
+    assert(cpu->m_cycle < 1);
+
+    cpu->regs.f = (cpu->regs.a & (1 << 7)) ? SM83_C_MASK : 0;
+    cpu->regs.a = (cpu->regs.a << 1) | (cpu->regs.f ? 1 : 0);
+    prefetch(cpu);
+}
+
+// RRCA
+// Opcode: 0b00001111
+// M-cycles: 1
+// Flags: 000C
+static void rrca(struct sm83 *cpu) {
+    assert(cpu->m_cycle < 1);
+
+    cpu->regs.f = (cpu->regs.a & 1) ? SM83_C_MASK : 0;
+    cpu->regs.a = (cpu->regs.a >> 1) | (cpu->regs.f ? (1 << 7) : 0);
+    prefetch(cpu);
+}
+
 void sm83_m_cycle(struct sm83 *cpu) {
     switch (cpu->opcode) {
     case 0x00: nop(cpu); break; // NOP
@@ -379,6 +403,9 @@ void sm83_m_cycle(struct sm83 *cpu) {
     case 0x2E: ld_r8_imm8(cpu, r8_l); break;  // LD l, imm8
     case 0x36: ld_r8_imm8(cpu, r8_hl); break; // LD [hl], imm8
     case 0x3E: ld_r8_imm8(cpu, r8_a); break;  // LD a, imm8
+
+    case 0x07: rlca(cpu); break; // RLCA
+    case 0x0F: rrca(cpu); break; // RRCA
 
     default: exit(1);
     }
