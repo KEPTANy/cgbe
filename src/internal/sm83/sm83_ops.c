@@ -31,23 +31,17 @@ static void ld_r16_imm16(struct sm83 *cpu, enum r16 dest) {
     assert(cpu->m_cycle < 3);
 
     switch (cpu->m_cycle++) {
-    case 0:
+    case 0: cpu->tmp = bus_read(cpu->bus, cpu->regs.pc++); break;
+    case 1: cpu->tmp += bus_read(cpu->bus, cpu->regs.pc++) * 256; break;
+    case 2:
         switch (dest) {
-        case r16_bc: cpu->regs.c = bus_read(cpu->bus, cpu->regs.pc++); break;
-        case r16_de: cpu->regs.e = bus_read(cpu->bus, cpu->regs.pc++); break;
-        case r16_hl: cpu->regs.l = bus_read(cpu->bus, cpu->regs.pc++); break;
-        case r16_sp: cpu->regs.sp = bus_read(cpu->bus, cpu->regs.pc++); break;
+        case r16_bc: cpu->regs.b = cpu->tmp; break;
+        case r16_de: cpu->regs.d = cpu->tmp; break;
+        case r16_hl: cpu->regs.h = cpu->tmp; break;
+        case r16_sp: cpu->regs.sp = cpu->tmp; break;
         }
+        prefetch(cpu);
         break;
-    case 1:
-        switch (dest) {
-        case r16_bc: cpu->regs.b = bus_read(cpu->bus, cpu->regs.pc++); break;
-        case r16_de: cpu->regs.d = bus_read(cpu->bus, cpu->regs.pc++); break;
-        case r16_hl: cpu->regs.h = bus_read(cpu->bus, cpu->regs.pc++); break;
-        case r16_sp: cpu->regs.sp += (uint16_t)bus_read(cpu->bus, cpu->regs.pc++) * 256; break;
-        }
-        break;
-    case 2: prefetch(cpu); break;
     }
 }
 
@@ -60,12 +54,14 @@ static void ld_r16mem_a(struct sm83 *cpu, enum r16mem dest) {
 
     switch (cpu->m_cycle++) {
     case 0:
+        uint16_t address;
         switch (dest) {
-        case r16mem_bc: bus_write(cpu->bus, cpu->regs.bc, cpu->regs.a); break;
-        case r16mem_de: bus_write(cpu->bus, cpu->regs.de, cpu->regs.a); break;
-        case r16mem_hli: bus_write(cpu->bus, cpu->regs.hl++, cpu->regs.a); break;
-        case r16mem_hld: bus_write(cpu->bus, cpu->regs.hl--, cpu->regs.a); break;
+        case r16mem_bc: address = cpu->regs.bc; break;
+        case r16mem_de: address = cpu->regs.de; break;
+        case r16mem_hli: address = cpu->regs.hl++; break;
+        case r16mem_hld: address = cpu->regs.hl--; break;
         }
+        bus_write(cpu->bus, address, cpu->regs.a);
         break;
     case 1: prefetch(cpu); break;
     }
@@ -80,12 +76,14 @@ static void ld_a_r16mem(struct sm83 *cpu, enum r16mem source) {
 
     switch (cpu->m_cycle++) {
     case 0:
+        uint16_t address;
         switch (source) {
-        case r16mem_bc: cpu->regs.a = bus_read(cpu->bus, cpu->regs.bc); break;
-        case r16mem_de: cpu->regs.a = bus_read(cpu->bus, cpu->regs.de); break;
-        case r16mem_hli: cpu->regs.a = bus_read(cpu->bus, cpu->regs.hl++); break;
-        case r16mem_hld: cpu->regs.a = bus_read(cpu->bus, cpu->regs.hl--); break;
+        case r16mem_bc: address = cpu->regs.bc; break;
+        case r16mem_de: address = cpu->regs.de; break;
+        case r16mem_hli: address = cpu->regs.hl++; break;
+        case r16mem_hld: address = cpu->regs.hl--; break;
         }
+        cpu->regs.a = bus_read(cpu->bus, address);
         break;
     case 1: prefetch(cpu); break;
     }
@@ -115,15 +113,16 @@ static void inc_r16(struct sm83 *cpu, enum r16 reg) {
     assert(cpu->m_cycle < 2);
 
     switch (cpu->m_cycle++) {
-    case 0:
+    // case 0:
+    case 1:
         switch (reg) {
         case r16_bc: cpu->regs.bc++; break;
         case r16_de: cpu->regs.de++; break;
         case r16_hl: cpu->regs.hl++; break;
         case r16_sp: cpu->regs.sp++; break;
         }
+        prefetch(cpu);
         break;
-    case 1: prefetch(cpu); break;
     }
 }
 
@@ -135,15 +134,16 @@ static void dec_r16(struct sm83 *cpu, enum r16 reg) {
     assert(cpu->m_cycle < 2);
 
     switch (cpu->m_cycle++) {
-    case 0:
+    // case 0:
+    case 1:
         switch (reg) {
         case r16_bc: cpu->regs.bc--; break;
         case r16_de: cpu->regs.de--; break;
         case r16_hl: cpu->regs.hl--; break;
         case r16_sp: cpu->regs.sp--; break;
         }
+        prefetch(cpu);
         break;
-    case 1: prefetch(cpu); break;
     }
 }
 
@@ -154,28 +154,32 @@ static void dec_r16(struct sm83 *cpu, enum r16 reg) {
 static void add_hl_r16(struct sm83 *cpu, enum r16 reg) {
     assert(cpu->m_cycle < 2);
 
-    uint32_t sum = 0;
+    uint16_t x;
+    uint16_t y;
     switch (cpu->m_cycle++) {
     // case 0:
     case 1:
         cpu->regs.f &= ~(SM83_N_MASK & SM83_H_MASK & SM83_C_MASK); // N = 0, H = 0, C = 0
 
-        sum = cpu->regs.hl;
+        x = cpu->regs.hl;
         switch (reg) {
-        case r16_bc: sum += cpu->regs.bc; break;
-        case r16_de: sum += cpu->regs.de; break;
-        case r16_hl: sum += cpu->regs.hl; break;
-        case r16_sp: sum += cpu->regs.sp; break;
+        case r16_bc: y = cpu->regs.bc; break;
+        case r16_de: y = cpu->regs.de; break;
+        case r16_hl: y = cpu->regs.hl; break;
+        case r16_sp: y = cpu->regs.sp; break;
         }
-        cpu->regs.hl = sum;
 
-        if (sum & (1 << 12)) {
+        // check for overflow from bit 11
+        if ((x & 0xFFF) + (y & 0xFFF) > 0xFFF) {
             cpu->regs.f |= SM83_H_MASK;
         }
 
-        if (sum & (1 << 16)) {
+        // check for overflow from bit 15
+        if ((uint32_t)x + y > 0xFFFF) {
             cpu->regs.f |= SM83_C_MASK;
         }
+
+        cpu->regs.hl = x + y;
 
         prefetch(cpu);
         break;
@@ -201,7 +205,8 @@ static void inc_r8(struct sm83 *cpu, enum r8 reg) {
                 cpu->regs.f |= SM83_Z_MASK;
             }
 
-            if (cpu->tmp & (1 << 4)) {
+            // check for overflow from bit 3
+            if ((cpu->tmp ^ (cpu->tmp - 1)) & (1 << 4)) {
                 cpu->regs.f |= SM83_H_MASK;
             }
 
@@ -227,7 +232,8 @@ static void inc_r8(struct sm83 *cpu, enum r8 reg) {
             cpu->regs.f |= SM83_Z_MASK;
         }
 
-        if (res & (1 << 4)) {
+        // check for overflow from bit 3
+        if ((res ^ (res - 1)) & (1 << 4)) {
             cpu->regs.f |= SM83_H_MASK;
         }
 
@@ -255,7 +261,8 @@ static void dec_r8(struct sm83 *cpu, enum r8 reg) {
                 cpu->regs.f |= SM83_Z_MASK;
             }
 
-            if (cpu->tmp & (1 << 4)) {
+            // check for borrow from bit 4
+            if ((cpu->tmp ^ (cpu->tmp + 1)) & (1 << 4)) {
                 cpu->regs.f |= SM83_H_MASK;
             }
 
@@ -282,7 +289,8 @@ static void dec_r8(struct sm83 *cpu, enum r8 reg) {
             cpu->regs.f |= SM83_Z_MASK;
         }
 
-        if (res & (1 << 4)) {
+        // check for borrow from bit 4
+        if ((res ^ (res + 1)) & (1 << 4)) {
             cpu->regs.f |= SM83_H_MASK;
         }
 
@@ -433,7 +441,7 @@ static void scf(struct sm83 *cpu) {
 // CCF
 // Opcode: 0b00111111
 // M-cycles: 1
-// Flags: -001
+// Flags: -00C
 static void ccf(struct sm83 *cpu) {
     assert(cpu->m_cycle < 1);
 
@@ -504,7 +512,6 @@ static void ld_r8_r8(struct sm83 *cpu, enum r8 dest, enum r8 source) {
         case r8_hl:
             cpu->tmp = bus_read(cpu->bus, cpu->regs.hl);
             one_more = true;
-            return;
         }
 
         switch (dest) {
@@ -518,7 +525,6 @@ static void ld_r8_r8(struct sm83 *cpu, enum r8 dest, enum r8 source) {
         case r8_hl:
             bus_write(cpu->bus, cpu->regs.hl, cpu->tmp);
             one_more = true;
-            return;
         }
 
         if (one_more) {
@@ -537,42 +543,47 @@ static void ld_r8_r8(struct sm83 *cpu, enum r8 dest, enum r8 source) {
 static void add_a_r8(struct sm83 *cpu, enum r8 reg) {
     assert(cpu->m_cycle < 1 || (reg == r8_hl && cpu->m_cycle < 2));
 
+    bool one_more = false;
     switch (cpu->m_cycle++) {
     case 0:
+        uint16_t val;
         switch (reg) {
-        case r8_a: cpu->tmp = cpu->regs.a; break;
-        case r8_b: cpu->tmp = cpu->regs.b; break;
-        case r8_c: cpu->tmp = cpu->regs.c; break;
-        case r8_d: cpu->tmp = cpu->regs.d; break;
-        case r8_e: cpu->tmp = cpu->regs.e; break;
-        case r8_h: cpu->tmp = cpu->regs.h; break;
-        case r8_l: cpu->tmp = cpu->regs.l; break;
+        case r8_a: val = cpu->regs.a; break;
+        case r8_b: val = cpu->regs.b; break;
+        case r8_c: val = cpu->regs.c; break;
+        case r8_d: val = cpu->regs.d; break;
+        case r8_e: val = cpu->regs.e; break;
+        case r8_h: val = cpu->regs.h; break;
+        case r8_l: val = cpu->regs.l; break;
         case r8_hl:
-            cpu->tmp = bus_read(cpu->bus, cpu->regs.hl);
-            return; // delaying addition for 1 m-cycle
+            val = bus_read(cpu->bus, cpu->regs.hl);
+            one_more = true;
         }
-        [[fallthrough]];
-    case 1:
-        uint16_t sum = cpu->regs.a + cpu->tmp;
 
         cpu->regs.f = 0;
 
-        if (sum == 0) {
-            cpu->regs.f |= SM83_Z_MASK;
-        }
-
-        if (sum & (1 << 4)) {
+        // check for overflow from bit 3
+        if ((cpu->regs.a & 0xF) + (val & 0xF) > 0xF) {
             cpu->regs.f |= SM83_H_MASK;
         }
 
-        if (sum & (1 << 8)) {
+        // check for overflow from bit 7
+        if (cpu->regs.a + val > 0xFF) {
             cpu->regs.f |= SM83_C_MASK;
         }
 
-        cpu->regs.a = sum;
+        cpu->regs.a += val;
 
-        prefetch(cpu);
-        break;
+        if (cpu->regs.a == 0) {
+            cpu->regs.f |= SM83_Z_MASK;
+        }
+
+        if (one_more) {
+            return;
+        }
+
+        [[fallthrough]];
+    case 1: prefetch(cpu); break;
     }
 }
 
@@ -583,45 +594,51 @@ static void add_a_r8(struct sm83 *cpu, enum r8 reg) {
 static void adc_a_r8(struct sm83 *cpu, enum r8 reg) {
     assert(cpu->m_cycle < 1 || (reg == r8_hl && cpu->m_cycle < 2));
 
+    bool one_more = false;
     switch (cpu->m_cycle++) {
     case 0:
+        uint16_t val;
         switch (reg) {
-        case r8_a: cpu->tmp = cpu->regs.a; break;
-        case r8_b: cpu->tmp = cpu->regs.b; break;
-        case r8_c: cpu->tmp = cpu->regs.c; break;
-        case r8_d: cpu->tmp = cpu->regs.d; break;
-        case r8_e: cpu->tmp = cpu->regs.e; break;
-        case r8_h: cpu->tmp = cpu->regs.h; break;
-        case r8_l: cpu->tmp = cpu->regs.l; break;
+        case r8_a: val = cpu->regs.a; break;
+        case r8_b: val = cpu->regs.b; break;
+        case r8_c: val = cpu->regs.c; break;
+        case r8_d: val = cpu->regs.d; break;
+        case r8_e: val = cpu->regs.e; break;
+        case r8_h: val = cpu->regs.h; break;
+        case r8_l: val = cpu->regs.l; break;
         case r8_hl:
-            cpu->tmp = bus_read(cpu->bus, cpu->regs.hl);
-            return; // delaying addition for 1 m-cycle
+            val = bus_read(cpu->bus, cpu->regs.hl);
+            one_more = true;
         }
-        [[fallthrough]];
-    case 1:
-        uint16_t sum = cpu->regs.a + cpu->tmp;
+
         if (cpu->regs.f & SM83_C_MASK) {
-            sum++;
+            val++;
         }
 
         cpu->regs.f = 0;
 
-        if (sum == 0) {
-            cpu->regs.f |= SM83_Z_MASK;
-        }
-
-        if (sum & (1 << 4)) {
+        // check for overflow from bit 3
+        if ((cpu->regs.a & 0xF) + (val & 0xF) > 0xF) {
             cpu->regs.f |= SM83_H_MASK;
         }
 
-        if (sum & (1 << 8)) {
+        // check for overflow from bit 7
+        if (cpu->regs.a + val > 0xFF) {
             cpu->regs.f |= SM83_C_MASK;
         }
 
-        cpu->regs.a = sum;
+        cpu->regs.a += val;
 
-        prefetch(cpu);
-        break;
+        if (cpu->regs.a == 0) {
+            cpu->regs.f |= SM83_Z_MASK;
+        }
+
+        if (one_more) {
+            return;
+        }
+
+        [[fallthrough]];
+    case 1: prefetch(cpu); break;
     }
 }
 
