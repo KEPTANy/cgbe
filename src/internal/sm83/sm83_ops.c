@@ -576,6 +576,55 @@ static void add_a_r8(struct sm83 *cpu, enum r8 reg) {
     }
 }
 
+// ADC a, r8
+// Opcode: 0x10001xxx
+// M-cycles: 1/2 (2 for [hl])
+// Flags: Z0HC
+static void adc_a_r8(struct sm83 *cpu, enum r8 reg) {
+    assert(cpu->m_cycle < 1 || (reg == r8_hl && cpu->m_cycle < 2));
+
+    switch (cpu->m_cycle++) {
+    case 0:
+        switch (reg) {
+        case r8_a: cpu->tmp = cpu->regs.a; break;
+        case r8_b: cpu->tmp = cpu->regs.b; break;
+        case r8_c: cpu->tmp = cpu->regs.c; break;
+        case r8_d: cpu->tmp = cpu->regs.d; break;
+        case r8_e: cpu->tmp = cpu->regs.e; break;
+        case r8_h: cpu->tmp = cpu->regs.h; break;
+        case r8_l: cpu->tmp = cpu->regs.l; break;
+        case r8_hl:
+            cpu->tmp = bus_read(cpu->bus, cpu->regs.hl);
+            return; // delaying addition for 1 m-cycle
+        }
+        [[fallthrough]];
+    case 1:
+        uint16_t sum = cpu->regs.a + cpu->tmp;
+        if (cpu->regs.f & SM83_C_MASK) {
+            sum++;
+        }
+
+        cpu->regs.f = 0;
+
+        if (sum == 0) {
+            cpu->regs.f |= SM83_Z_MASK;
+        }
+
+        if (sum & (1 << 4)) {
+            cpu->regs.f |= SM83_H_MASK;
+        }
+
+        if (sum & (1 << 8)) {
+            cpu->regs.f |= SM83_C_MASK;
+        }
+
+        cpu->regs.a = sum;
+
+        prefetch(cpu);
+        break;
+    }
+}
+
 void sm83_m_cycle(struct sm83 *cpu) {
     switch (cpu->opcode) {
     case 0x00: nop(cpu); break; // NOP
@@ -734,6 +783,15 @@ void sm83_m_cycle(struct sm83 *cpu) {
     case 0x85: add_a_r8(cpu, r8_l); break;  // ADD a, l
     case 0x86: add_a_r8(cpu, r8_hl); break; // ADD a, [hl]
     case 0x87: add_a_r8(cpu, r8_a); break;  // ADD a, a
+
+    case 0x88: adc_a_r8(cpu, r8_b); break;  // ADC a, b
+    case 0x89: adc_a_r8(cpu, r8_c); break;  // ADC a, c
+    case 0x8A: adc_a_r8(cpu, r8_d); break;  // ADC a, d
+    case 0x8B: adc_a_r8(cpu, r8_e); break;  // ADC a, e
+    case 0x8C: adc_a_r8(cpu, r8_h); break;  // ADC a, h
+    case 0x8D: adc_a_r8(cpu, r8_l); break;  // ADC a, l
+    case 0x8E: adc_a_r8(cpu, r8_hl); break; // ADC a, [hl]
+    case 0x8F: adc_a_r8(cpu, r8_a); break;  // ADC a, a
 
     case 0x10: // STOP (implement later)
     case 0x76: // HALT (implement later)
