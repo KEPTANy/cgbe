@@ -14,19 +14,13 @@ static void prefetch(struct sm83 *cpu) {
     cpu->m_cycle = 0;
 }
 
-// NOP
-// Opcode: 0b00000000
-// M-cycles: 1
-// Flags: ----
+// NOP | Opcode: 0b00000000 | M-cycles: 1 | Flags: ----
 static void nop(struct sm83 *cpu) {
     assert(cpu->m_cycle < 1);
     prefetch(cpu);
 }
 
-// LD r16, imm16
-// Opcode: 0b00xx0001
-// M-cycles: 3
-// Flags: ----
+// LD r16, imm16 | Opcode: 0b00xx0001 | M-cycles: 3 | Flags: ----
 static void ld_r16_imm16(struct sm83 *cpu, enum r16 dest) {
     assert(cpu->m_cycle < 3);
 
@@ -45,10 +39,7 @@ static void ld_r16_imm16(struct sm83 *cpu, enum r16 dest) {
     }
 }
 
-// LD [r16mem], a
-// Opcode: 0b00xx0010
-// M-cycles: 2
-// Flags: ----
+// LD [r16mem], a | Opcode: 0b00xx0010 | M-cycles: 2 | Flags: ----
 static void ld_r16mem_a(struct sm83 *cpu, enum r16mem dest) {
     assert(cpu->m_cycle < 2);
 
@@ -67,10 +58,7 @@ static void ld_r16mem_a(struct sm83 *cpu, enum r16mem dest) {
     }
 }
 
-// LD a, [r16mem]
-// Opcode: 0b00xx1010
-// M-cycles: 2
-// Flags: ----
+// LD a, [r16mem] | Opcode: 0b00xx1010 | M-cycles: 2 | Flags: ----
 static void ld_a_r16mem(struct sm83 *cpu, enum r16mem source) {
     assert(cpu->m_cycle < 2);
 
@@ -89,10 +77,7 @@ static void ld_a_r16mem(struct sm83 *cpu, enum r16mem source) {
     }
 }
 
-// LD [imm16], sp
-// Opcode: 0b00001000
-// M-cycles: 5
-// Flags: ----
+// LD [imm16], sp | Opcode: 0b00001000 | M-cycles: 5 | Flags: ----
 static void ld_imm16_sp(struct sm83 *cpu) {
     assert(cpu->m_cycle < 5);
 
@@ -105,10 +90,7 @@ static void ld_imm16_sp(struct sm83 *cpu) {
     }
 }
 
-// INC r16
-// Opcode: 0b00xx0011
-// M-cycles: 2
-// Flags: ----
+// INC r16 | Opcode: 0b00xx0011 | M-cycles: 2 | Flags: ----
 static void inc_r16(struct sm83 *cpu, enum r16 reg) {
     assert(cpu->m_cycle < 2);
 
@@ -126,10 +108,7 @@ static void inc_r16(struct sm83 *cpu, enum r16 reg) {
     }
 }
 
-// DEC r16
-// Opcode: 0b00xx1011
-// M-cycles: 2
-// Flags: ----
+// DEC r16 | Opcode: 0b00xx1011 | M-cycles: 2 | Flags: ----
 static void dec_r16(struct sm83 *cpu, enum r16 reg) {
     assert(cpu->m_cycle < 2);
 
@@ -147,10 +126,7 @@ static void dec_r16(struct sm83 *cpu, enum r16 reg) {
     }
 }
 
-// ADD hl, r16
-// Opcode: 0b00xx1001
-// M-cycles: 2
-// Flags: -0HC
+// ADD hl, r16 | Opcode: 0b00xx1001 | M-cycles: 2 | Flags: -0HC
 static void add_hl_r16(struct sm83 *cpu, enum r16 reg) {
     assert(cpu->m_cycle < 2);
 
@@ -186,10 +162,7 @@ static void add_hl_r16(struct sm83 *cpu, enum r16 reg) {
     }
 }
 
-// INC r8
-// Opcode: 0b00xxx100
-// M-cycles: 1/3 (3 for [hl])
-// Flags: Z0H-
+// INC r8 | Opcode: 0b00xxx100 | M-cycles: 1/3 | Flags: Z0H-
 static void inc_r8(struct sm83 *cpu, enum r8 reg) {
     assert(cpu->m_cycle < 1 || (reg == r8_hl && cpu->m_cycle < 3));
 
@@ -241,10 +214,7 @@ static void inc_r8(struct sm83 *cpu, enum r8 reg) {
     }
 }
 
-// DEC r8
-// Opcode: 0b00xxx101
-// M-cycles: 1/3 (3 for [hl])
-// Flags: Z0H-
+// DEC r8 | Opcode: 0b00xxx101 | M-cycles: 1/3 | Flags: Z0H-
 static void dec_r8(struct sm83 *cpu, enum r8 reg) {
     assert(cpu->m_cycle < 1 || (reg == r8_hl && cpu->m_cycle < 3));
 
@@ -298,10 +268,7 @@ static void dec_r8(struct sm83 *cpu, enum r8 reg) {
     }
 }
 
-// LD r8, imm8
-// Opcode: 0b00xxx110
-// M-cycles: 2/3 (3 for [hl])
-// Flags: ----
+// LD r8, imm8 | Opcode: 0b00xxx110 | M-cycles: 2/3 | Flags: ----
 static void ld_r8_imm8(struct sm83 *cpu, enum r8 reg) {
     assert(cpu->m_cycle < 2 || (reg == r8_hl && cpu->m_cycle < 3));
 
@@ -325,10 +292,7 @@ static void ld_r8_imm8(struct sm83 *cpu, enum r8 reg) {
     }
 }
 
-// RLCA
-// Opcode: 0b00000111
-// M-cycles: 1
-// Flags: 000C
+// RLCA | Opcode: 0b00000111 | M-cycles: 1 | Flags: 000C
 static void rlca(struct sm83 *cpu) {
     assert(cpu->m_cycle < 1);
 
@@ -337,10 +301,7 @@ static void rlca(struct sm83 *cpu) {
     prefetch(cpu);
 }
 
-// RRCA
-// Opcode: 0b00001111
-// M-cycles: 1
-// Flags: 000C
+// RRCA | Opcode: 0b00001111 | M-cycles: 1 | Flags: 000C
 static void rrca(struct sm83 *cpu) {
     assert(cpu->m_cycle < 1);
 
@@ -349,10 +310,7 @@ static void rrca(struct sm83 *cpu) {
     prefetch(cpu);
 }
 
-// RLA
-// Opcode: 0b00010111
-// M-cycles: 1
-// Flags: 000C
+// RLA | Opcode: 0b00010111 | M-cycles: 1 | Flags: 000C
 static void rla(struct sm83 *cpu) {
     assert(cpu->m_cycle < 1);
 
@@ -362,10 +320,7 @@ static void rla(struct sm83 *cpu) {
     prefetch(cpu);
 }
 
-// RRA
-// Opcode: 0b00011111
-// M-cycles: 1
-// Flags: 000C
+// RRA | Opcode: 0b00011111 | M-cycles: 1 | Flags: 000C
 static void rra(struct sm83 *cpu) {
     assert(cpu->m_cycle < 1);
 
@@ -375,10 +330,7 @@ static void rra(struct sm83 *cpu) {
     prefetch(cpu);
 }
 
-// DAA
-// Opcode: 0b00100111
-// M-cycles: 1
-// Flags: Z-0C
+// DAA | Opcode: 0b00100111 | M-cycles: 1 | Flags: Z-0C
 static void daa(struct sm83 *cpu) {
     assert(cpu->m_cycle < 1);
 
@@ -414,10 +366,7 @@ static void daa(struct sm83 *cpu) {
     prefetch(cpu);
 }
 
-// CPL
-// Opcode: 0b00101111
-// M-cycles: 1
-// Flags: -11-
+// CPL | Opcode: 0b00101111 | M-cycles: 1 | Flags: -11-
 static void cpl(struct sm83 *cpu) {
     assert(cpu->m_cycle < 1);
 
@@ -426,10 +375,7 @@ static void cpl(struct sm83 *cpu) {
     prefetch(cpu);
 }
 
-// SCF
-// Opcode: 0b00110111
-// M-cycles: 1
-// Flags: -001
+// SCF | Opcode: 0b00110111 | M-cycles: 1 | Flags: -001
 static void scf(struct sm83 *cpu) {
     assert(cpu->m_cycle < 1);
 
@@ -438,10 +384,7 @@ static void scf(struct sm83 *cpu) {
     prefetch(cpu);
 }
 
-// CCF
-// Opcode: 0b00111111
-// M-cycles: 1
-// Flags: -00C
+// CCF | Opcode: 0b00111111 | M-cycles: 1 | Flags: -00C
 static void ccf(struct sm83 *cpu) {
     assert(cpu->m_cycle < 1);
 
@@ -450,10 +393,7 @@ static void ccf(struct sm83 *cpu) {
     prefetch(cpu);
 }
 
-// JR imm8
-// Opcode: 0x00011000
-// M-cycles: 3
-// Flags: ----
+// JR imm8 | Opcode: 0x00011000 | M-cycles: 3 | Flags: ----
 static void jr_imm8(struct sm83 *cpu) {
     assert(cpu->m_cycle < 3);
 
@@ -464,10 +404,7 @@ static void jr_imm8(struct sm83 *cpu) {
     }
 }
 
-// JR cond, imm8
-// Opcode: 0x001xx000
-// M-cycles: 2/3 (2 if cond is true, 3 if cond is false)
-// Flags: ----
+// JR cond, imm8 | Opcode: 0x001xx000 | M-cycles: 2/3 | Flags: ----
 static void jr_cond_imm8(struct sm83 *cpu, enum cond cc) {
     bool z = cpu->regs.f & SM83_Z_MASK;
     bool c = cpu->regs.f & SM83_C_MASK;
@@ -491,10 +428,7 @@ static void jr_cond_imm8(struct sm83 *cpu, enum cond cc) {
     }
 }
 
-// LD r8, r8
-// Opcode: 0x01dddsss (d for dest, s for source)
-// M-cycles: 1/2 (2 if either dest or source is [hl])
-// Flags: ----
+// LD r8, r8 | Opcode: 0x01dddsss | M-cycles: 1/2 | Flags: ----
 static void ld_r8_r8(struct sm83 *cpu, enum r8 dest, enum r8 source) {
     assert(cpu->m_cycle < 1 || ((dest == r8_hl || source == r8_hl) && cpu->m_cycle < 2));
 
@@ -532,10 +466,7 @@ static void ld_r8_r8(struct sm83 *cpu, enum r8 dest, enum r8 source) {
     }
 }
 
-// ADD a, r8
-// Opcode: 0x10000xxx
-// M-cycles: 1/2 (2 for [hl])
-// Flags: Z0HC
+// ADD a, r8 | Opcode: 0x10000xxx | M-cycles: 1/2 | Flags: Z0HC
 static void add_a_r8(struct sm83 *cpu, enum r8 reg) {
     assert(cpu->m_cycle < 1 || (reg == r8_hl && cpu->m_cycle < 2));
 
@@ -581,10 +512,7 @@ static void add_a_r8(struct sm83 *cpu, enum r8 reg) {
     }
 }
 
-// ADC a, r8
-// Opcode: 0x10001xxx
-// M-cycles: 1/2 (2 for [hl])
-// Flags: Z0HC
+// ADC a, r8 | Opcode: 0x10001xxx | M-cycles: 1/2 | Flags: Z0HC
 static void adc_a_r8(struct sm83 *cpu, enum r8 reg) {
     assert(cpu->m_cycle < 1 || (reg == r8_hl && cpu->m_cycle < 2));
 
@@ -634,10 +562,7 @@ static void adc_a_r8(struct sm83 *cpu, enum r8 reg) {
     }
 }
 
-// SUB a, r8
-// Opcode: 0x10010xxx
-// M-cycles: 1/2 (2 for [hl])
-// Flags: Z0HC
+// SUB a, r8 | Opcode: 0x10010xxx | M-cycles: 1/2 | Flags: Z0HC
 static void sub_a_r8(struct sm83 *cpu, enum r8 reg) {
     assert(cpu->m_cycle < 1 || (reg == r8_hl && cpu->m_cycle < 2));
 
@@ -683,10 +608,7 @@ static void sub_a_r8(struct sm83 *cpu, enum r8 reg) {
     }
 }
 
-// SBC a, r8
-// Opcode: 0x10011xxx
-// M-cycles: 1/2 (2 for [hl])
-// Flags: Z0HC
+// SBC a, r8 | Opcode: 0x10011xxx | M-cycles: 1/2 | Flags: Z0HC
 static void sbc_a_r8(struct sm83 *cpu, enum r8 reg) {
     assert(cpu->m_cycle < 1 || (reg == r8_hl && cpu->m_cycle < 2));
 
@@ -736,10 +658,7 @@ static void sbc_a_r8(struct sm83 *cpu, enum r8 reg) {
     }
 }
 
-// AND a, r8
-// Opcode: 0x10100xxx
-// M-cycles: 1/2 (2 for [hl])
-// Flags: Z010
+// AND a, r8 | Opcode: 0x10100xxx | M-cycles: 1/2 | Flags: Z010
 static void and_a_r8(struct sm83 *cpu, enum r8 reg) {
     assert(cpu->m_cycle < 1 || (reg == r8_hl && cpu->m_cycle < 2));
 
@@ -774,10 +693,7 @@ static void and_a_r8(struct sm83 *cpu, enum r8 reg) {
     }
 }
 
-// XOR a, r8
-// Opcode: 0x10101xxx
-// M-cycles: 1/2 (2 for [hl])
-// Flags: Z000
+// XOR a, r8 | Opcode: 0x10101xxx | M-cycles: 1/2 | Flags: Z000
 static void xor_a_r8(struct sm83 *cpu, enum r8 reg) {
     assert(cpu->m_cycle < 1 || (reg == r8_hl && cpu->m_cycle < 2));
 
@@ -812,10 +728,7 @@ static void xor_a_r8(struct sm83 *cpu, enum r8 reg) {
     }
 }
 
-// OR a, r8
-// Opcode: 0x10110xxx
-// M-cycles: 1/2 (2 for [hl])
-// Flags: Z000
+// OR a, r8 | Opcode: 0x10110xxx | M-cycles: 1/2 | Flags: Z000
 static void or_a_r8(struct sm83 *cpu, enum r8 reg) {
     assert(cpu->m_cycle < 1 || (reg == r8_hl && cpu->m_cycle < 2));
 
@@ -850,10 +763,7 @@ static void or_a_r8(struct sm83 *cpu, enum r8 reg) {
     }
 }
 
-// CP a, r8
-// Opcode: 0x10111xxx
-// M-cycles: 1/2 (2 for [hl])
-// Flags: Z1HC
+// CP a, r8 | Opcode: 0x10111xxx | M-cycles: 1/2 | Flags: Z1HC
 static void cp_a_r8(struct sm83 *cpu, enum r8 reg) {
     assert(cpu->m_cycle < 1 || (reg == r8_hl && cpu->m_cycle < 2));
 
