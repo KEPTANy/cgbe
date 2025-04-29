@@ -764,7 +764,7 @@ void sm83_m_cycle(struct sm83 *cpu) {
 
     case 0x0A: ld_a_r16mem(cpu, r16mem_bc); break;  // LD a, [bc]
     case 0x1A: ld_a_r16mem(cpu, r16mem_de); break;  // LD a, [de]
-    case 0xA2: ld_a_r16mem(cpu, r16mem_hli); break; // LD a, [hl+]
+    case 0x2A: ld_a_r16mem(cpu, r16mem_hli); break; // LD a, [hl+]
     case 0x3A: ld_a_r16mem(cpu, r16mem_hld); break; // LD a, [hl-]
 
     case 0x08: ld_imm16_sp(cpu); break; // LD [imm16], sp
