@@ -509,9 +509,7 @@ static void ld_r8_r8(struct sm83 *cpu, enum r8 dest, enum r8 source) {
         case r8_e: cpu->tmp = cpu->regs.e; break;
         case r8_h: cpu->tmp = cpu->regs.h; break;
         case r8_l: cpu->tmp = cpu->regs.l; break;
-        case r8_hl:
-            cpu->tmp = bus_read(cpu->bus, cpu->regs.hl);
-            one_more = true;
+        case r8_hl: cpu->tmp = bus_read(cpu->bus, cpu->regs.hl); one_more = true;
         }
 
         switch (dest) {
@@ -522,9 +520,7 @@ static void ld_r8_r8(struct sm83 *cpu, enum r8 dest, enum r8 source) {
         case r8_e: cpu->regs.e = cpu->tmp; break;
         case r8_h: cpu->regs.h = cpu->tmp; break;
         case r8_l: cpu->regs.l = cpu->tmp; break;
-        case r8_hl:
-            bus_write(cpu->bus, cpu->regs.hl, cpu->tmp);
-            one_more = true;
+        case r8_hl: bus_write(cpu->bus, cpu->regs.hl, cpu->tmp); one_more = true;
         }
 
         if (one_more) {
@@ -555,9 +551,7 @@ static void add_a_r8(struct sm83 *cpu, enum r8 reg) {
         case r8_e: val = cpu->regs.e; break;
         case r8_h: val = cpu->regs.h; break;
         case r8_l: val = cpu->regs.l; break;
-        case r8_hl:
-            val = bus_read(cpu->bus, cpu->regs.hl);
-            one_more = true;
+        case r8_hl: val = bus_read(cpu->bus, cpu->regs.hl); one_more = true;
         }
 
         cpu->regs.f = 0;
@@ -606,9 +600,7 @@ static void adc_a_r8(struct sm83 *cpu, enum r8 reg) {
         case r8_e: val = cpu->regs.e; break;
         case r8_h: val = cpu->regs.h; break;
         case r8_l: val = cpu->regs.l; break;
-        case r8_hl:
-            val = bus_read(cpu->bus, cpu->regs.hl);
-            one_more = true;
+        case r8_hl: val = bus_read(cpu->bus, cpu->regs.hl); one_more = true;
         }
 
         if (cpu->regs.f & SM83_C_MASK) {
@@ -661,9 +653,7 @@ static void sub_a_r8(struct sm83 *cpu, enum r8 reg) {
         case r8_e: val = cpu->regs.e; break;
         case r8_h: val = cpu->regs.h; break;
         case r8_l: val = cpu->regs.l; break;
-        case r8_hl:
-            val = bus_read(cpu->bus, cpu->regs.hl);
-            one_more = true;
+        case r8_hl: val = bus_read(cpu->bus, cpu->regs.hl); one_more = true;
         }
 
         cpu->regs.f = 0;
@@ -712,9 +702,7 @@ static void sbc_a_r8(struct sm83 *cpu, enum r8 reg) {
         case r8_e: val = cpu->regs.e; break;
         case r8_h: val = cpu->regs.h; break;
         case r8_l: val = cpu->regs.l; break;
-        case r8_hl:
-            val = bus_read(cpu->bus, cpu->regs.hl);
-            one_more = true;
+        case r8_hl: val = bus_read(cpu->bus, cpu->regs.hl); one_more = true;
         }
 
         if (cpu->regs.f & SM83_C_MASK) {
@@ -767,9 +755,7 @@ static void and_a_r8(struct sm83 *cpu, enum r8 reg) {
         case r8_e: val = cpu->regs.e; break;
         case r8_h: val = cpu->regs.h; break;
         case r8_l: val = cpu->regs.l; break;
-        case r8_hl:
-            val = bus_read(cpu->bus, cpu->regs.hl);
-            one_more = true;
+        case r8_hl: val = bus_read(cpu->bus, cpu->regs.hl); one_more = true;
         }
 
         cpu->regs.a &= val;
@@ -807,9 +793,7 @@ static void xor_a_r8(struct sm83 *cpu, enum r8 reg) {
         case r8_e: val = cpu->regs.e; break;
         case r8_h: val = cpu->regs.h; break;
         case r8_l: val = cpu->regs.l; break;
-        case r8_hl:
-            val = bus_read(cpu->bus, cpu->regs.hl);
-            one_more = true;
+        case r8_hl: val = bus_read(cpu->bus, cpu->regs.hl); one_more = true;
         }
 
         cpu->regs.a ^= val;
@@ -847,9 +831,7 @@ static void or_a_r8(struct sm83 *cpu, enum r8 reg) {
         case r8_e: val = cpu->regs.e; break;
         case r8_h: val = cpu->regs.h; break;
         case r8_l: val = cpu->regs.l; break;
-        case r8_hl:
-            val = bus_read(cpu->bus, cpu->regs.hl);
-            one_more = true;
+        case r8_hl: val = bus_read(cpu->bus, cpu->regs.hl); one_more = true;
         }
 
         cpu->regs.a |= val;
@@ -887,9 +869,7 @@ static void cp_a_r8(struct sm83 *cpu, enum r8 reg) {
         case r8_e: val = cpu->regs.e; break;
         case r8_h: val = cpu->regs.h; break;
         case r8_l: val = cpu->regs.l; break;
-        case r8_hl:
-            val = bus_read(cpu->bus, cpu->regs.hl);
-            one_more = true;
+        case r8_hl: val = bus_read(cpu->bus, cpu->regs.hl); one_more = true;
         }
 
         cpu->regs.f = SM83_N_MASK;
