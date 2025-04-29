@@ -73,13 +73,13 @@ static void cp_a(struct sm83 *cpu, uint8_t x) {
 // returns true if reg is r8_hl
 static bool load_from_r8(struct sm83 *cpu, uint8_t *dest, enum r8 source) {
     switch (source) {
-    case r8_a: *dest = cpu->regs.a;
-    case r8_b: *dest = cpu->regs.b;
-    case r8_c: *dest = cpu->regs.c;
-    case r8_d: *dest = cpu->regs.d;
-    case r8_e: *dest = cpu->regs.e;
-    case r8_h: *dest = cpu->regs.h;
-    case r8_l: *dest = cpu->regs.l;
+    case r8_a: *dest = cpu->regs.a; break;
+    case r8_b: *dest = cpu->regs.b; break;
+    case r8_c: *dest = cpu->regs.c; break;
+    case r8_d: *dest = cpu->regs.d; break;
+    case r8_e: *dest = cpu->regs.e; break;
+    case r8_h: *dest = cpu->regs.h; break;
+    case r8_l: *dest = cpu->regs.l; break;
     case r8_hl: *dest = bus_read(cpu->bus, cpu->regs.hl); return true;
     }
     return false;
@@ -88,13 +88,13 @@ static bool load_from_r8(struct sm83 *cpu, uint8_t *dest, enum r8 source) {
 // returns true if reg is r8_hl
 static bool load_to_r8(struct sm83 *cpu, enum r8 dest, uint8_t source) {
     switch (dest) {
-    case r8_a: cpu->regs.a = source;
-    case r8_b: cpu->regs.b = source;
-    case r8_c: cpu->regs.c = source;
-    case r8_d: cpu->regs.d = source;
-    case r8_e: cpu->regs.e = source;
-    case r8_h: cpu->regs.h = source;
-    case r8_l: cpu->regs.l = source;
+    case r8_a: cpu->regs.a = source; break;
+    case r8_b: cpu->regs.b = source; break;
+    case r8_c: cpu->regs.c = source; break;
+    case r8_d: cpu->regs.d = source; break;
+    case r8_e: cpu->regs.e = source; break;
+    case r8_h: cpu->regs.h = source; break;
+    case r8_l: cpu->regs.l = source; break;
     case r8_hl: bus_write(cpu->bus, cpu->regs.hl, source); return true;
     }
     return false;
