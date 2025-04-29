@@ -642,6 +642,112 @@ static void adc_a_r8(struct sm83 *cpu, enum r8 reg) {
     }
 }
 
+// SUB a, r8
+// Opcode: 0x10010xxx
+// M-cycles: 1/2 (2 for [hl])
+// Flags: Z0HC
+static void sub_a_r8(struct sm83 *cpu, enum r8 reg) {
+    assert(cpu->m_cycle < 1 || (reg == r8_hl && cpu->m_cycle < 2));
+
+    bool one_more = false;
+    switch (cpu->m_cycle++) {
+    case 0:
+        uint16_t val;
+        switch (reg) {
+        case r8_a: val = cpu->regs.a; break;
+        case r8_b: val = cpu->regs.b; break;
+        case r8_c: val = cpu->regs.c; break;
+        case r8_d: val = cpu->regs.d; break;
+        case r8_e: val = cpu->regs.e; break;
+        case r8_h: val = cpu->regs.h; break;
+        case r8_l: val = cpu->regs.l; break;
+        case r8_hl:
+            val = bus_read(cpu->bus, cpu->regs.hl);
+            one_more = true;
+        }
+
+        cpu->regs.f = 0;
+
+        // check for borrow from bit 4
+        if ((cpu->regs.a & 0xF) < (val & 0xF)) {
+            cpu->regs.f |= SM83_H_MASK;
+        }
+
+        // check for borrow from bit 8
+        if (cpu->regs.a < val) {
+            cpu->regs.f |= SM83_C_MASK;
+        }
+
+        cpu->regs.a += val;
+
+        if (cpu->regs.a == 0) {
+            cpu->regs.f |= SM83_Z_MASK;
+        }
+
+        if (one_more) {
+            return;
+        }
+
+        [[fallthrough]];
+    case 1: prefetch(cpu); break;
+    }
+}
+
+// SBC a, r8
+// Opcode: 0x10011xxx
+// M-cycles: 1/2 (2 for [hl])
+// Flags: Z0HC
+static void sbc_a_r8(struct sm83 *cpu, enum r8 reg) {
+    assert(cpu->m_cycle < 1 || (reg == r8_hl && cpu->m_cycle < 2));
+
+    bool one_more = false;
+    switch (cpu->m_cycle++) {
+    case 0:
+        uint16_t val;
+        switch (reg) {
+        case r8_a: val = cpu->regs.a; break;
+        case r8_b: val = cpu->regs.b; break;
+        case r8_c: val = cpu->regs.c; break;
+        case r8_d: val = cpu->regs.d; break;
+        case r8_e: val = cpu->regs.e; break;
+        case r8_h: val = cpu->regs.h; break;
+        case r8_l: val = cpu->regs.l; break;
+        case r8_hl:
+            val = bus_read(cpu->bus, cpu->regs.hl);
+            one_more = true;
+        }
+
+        if (cpu->regs.f & SM83_C_MASK) {
+            val++;
+        }
+
+        cpu->regs.f = 0;
+
+        // check for borrow from bit 4
+        if ((cpu->regs.a & 0xF) < (val & 0xF)) {
+            cpu->regs.f |= SM83_H_MASK;
+        }
+
+        // check for borrow from bit 8
+        if (cpu->regs.a < val) {
+            cpu->regs.f |= SM83_C_MASK;
+        }
+
+        cpu->regs.a += val;
+
+        if (cpu->regs.a == 0) {
+            cpu->regs.f |= SM83_Z_MASK;
+        }
+
+        if (one_more) {
+            return;
+        }
+
+        [[fallthrough]];
+    case 1: prefetch(cpu); break;
+    }
+}
+
 void sm83_m_cycle(struct sm83 *cpu) {
     switch (cpu->opcode) {
     case 0x00: nop(cpu); break; // NOP
@@ -809,6 +915,24 @@ void sm83_m_cycle(struct sm83 *cpu) {
     case 0x8D: adc_a_r8(cpu, r8_l); break;  // ADC a, l
     case 0x8E: adc_a_r8(cpu, r8_hl); break; // ADC a, [hl]
     case 0x8F: adc_a_r8(cpu, r8_a); break;  // ADC a, a
+
+    case 0x90: sub_a_r8(cpu, r8_b); break;  // SUB a, b
+    case 0x91: sub_a_r8(cpu, r8_c); break;  // SUB a, c
+    case 0x92: sub_a_r8(cpu, r8_d); break;  // SUB a, d
+    case 0x93: sub_a_r8(cpu, r8_e); break;  // SUB a, e
+    case 0x94: sub_a_r8(cpu, r8_h); break;  // SUB a, h
+    case 0x95: sub_a_r8(cpu, r8_l); break;  // SUB a, l
+    case 0x96: sub_a_r8(cpu, r8_hl); break; // SUB a, [hl]
+    case 0x97: sub_a_r8(cpu, r8_a); break;  // SUB a, a
+
+    case 0x98: sbc_a_r8(cpu, r8_b); break;  // SBC a, b
+    case 0x99: sbc_a_r8(cpu, r8_c); break;  // SBC a, c
+    case 0x9A: sbc_a_r8(cpu, r8_d); break;  // SBC a, d
+    case 0x9B: sbc_a_r8(cpu, r8_e); break;  // SBC a, e
+    case 0x9C: sbc_a_r8(cpu, r8_h); break;  // SBC a, h
+    case 0x9D: sbc_a_r8(cpu, r8_l); break;  // SBC a, l
+    case 0x9E: sbc_a_r8(cpu, r8_hl); break; // SBC a, [hl]
+    case 0x9F: sbc_a_r8(cpu, r8_a); break;  // SBC a, a
 
     case 0x10: // STOP (implement later)
     case 0x76: // HALT (implement later)
