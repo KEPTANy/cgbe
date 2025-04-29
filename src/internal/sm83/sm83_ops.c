@@ -450,8 +450,11 @@ static void ld_r8_r8(struct sm83 *cpu, enum r8 dest, enum r8 source) {
     }
 }
 
-// ADD a, r8 | Opcode: 0x10000xxx | M-cycles: 1/2 | Flags: Z0HC
-static void add_a_r8(struct sm83 *cpu, enum r8 reg) {
+enum mathop { op_add, op_adc, op_sub, op_sbc, op_and, op_xor, op_or, op_cp };
+
+// ADD/ADC/SUB/SBC/AND/XOR/OR/CP a, r8
+// Opcode: 0x10oooxxx | M-cycles: 1/2
+static void mathop_a_r8(struct sm83 *cpu, enum mathop op, enum r8 reg) {
     assert(cpu->m_cycle < 1 || (reg == r8_hl && cpu->m_cycle < 2));
 
     switch (cpu->m_cycle++) {
@@ -459,7 +462,16 @@ static void add_a_r8(struct sm83 *cpu, enum r8 reg) {
         uint8_t tmp;
         bool one_more = load_from_r8(cpu, &tmp, reg);
 
-        add_a(cpu, tmp);
+        switch (op) {
+        case op_add: add_a(cpu, tmp); break;
+        case op_adc: adc_a(cpu, tmp); break;
+        case op_sub: sub_a(cpu, tmp); break;
+        case op_sbc: sbc_a(cpu, tmp); break;
+        case op_and: and_a(cpu, tmp); break;
+        case op_xor: xor_a(cpu, tmp); break;
+        case op_or: or_a(cpu, tmp); break;
+        case op_cp: cp_a(cpu, tmp); break;
+        }
 
         if (one_more) {
             return;
@@ -468,208 +480,27 @@ static void add_a_r8(struct sm83 *cpu, enum r8 reg) {
     }
 }
 
-// ADC a, r8 | Opcode: 0x10001xxx | M-cycles: 1/2 | Flags: Z0HC
-static void adc_a_r8(struct sm83 *cpu, enum r8 reg) {
-    assert(cpu->m_cycle < 1 || (reg == r8_hl && cpu->m_cycle < 2));
+// ADD/ADC/SUB/SBC/AND/XOR/OR/CP a, imm8
+// Opcode: 0x11ooo110 | M-cycles: 2
+static void mathop_a_imm8(struct sm83 *cpu, enum mathop op) {
+    assert(cpu->m_cycle < 2);
 
     switch (cpu->m_cycle++) {
     case 0:
-        uint8_t tmp;
-        bool one_more = load_from_r8(cpu, &tmp, reg);
+        uint8_t arg = bus_read(cpu->bus, cpu->regs.pc++);
 
-        adc_a(cpu, tmp);
-
-        if (one_more) {
-            return;
+        switch (op) {
+        case op_add: add_a(cpu, arg); break;
+        case op_adc: adc_a(cpu, arg); break;
+        case op_sub: sub_a(cpu, arg); break;
+        case op_sbc: sbc_a(cpu, arg); break;
+        case op_and: and_a(cpu, arg); break;
+        case op_xor: xor_a(cpu, arg); break;
+        case op_or: or_a(cpu, arg); break;
+        case op_cp: cp_a(cpu, arg); break;
         }
-    case 1: prefetch(cpu); break;
-    }
-}
 
-// SUB a, r8 | Opcode: 0x10010xxx | M-cycles: 1/2 | Flags: Z0HC
-static void sub_a_r8(struct sm83 *cpu, enum r8 reg) {
-    assert(cpu->m_cycle < 1 || (reg == r8_hl && cpu->m_cycle < 2));
-
-    switch (cpu->m_cycle++) {
-    case 0:
-        uint8_t tmp;
-        bool one_more = load_from_r8(cpu, &tmp, reg);
-
-        sub_a(cpu, tmp);
-
-        if (one_more) {
-            return;
-        }
-    case 1: prefetch(cpu); break;
-    }
-}
-
-// SBC a, r8 | Opcode: 0x10011xxx | M-cycles: 1/2 | Flags: Z0HC
-static void sbc_a_r8(struct sm83 *cpu, enum r8 reg) {
-    assert(cpu->m_cycle < 1 || (reg == r8_hl && cpu->m_cycle < 2));
-
-    switch (cpu->m_cycle++) {
-    case 0:
-        uint8_t tmp;
-        bool one_more = load_from_r8(cpu, &tmp, reg);
-
-        sbc_a(cpu, tmp);
-
-        if (one_more) {
-            return;
-        }
-    case 1: prefetch(cpu); break;
-    }
-}
-
-// AND a, r8 | Opcode: 0x10100xxx | M-cycles: 1/2 | Flags: Z010
-static void and_a_r8(struct sm83 *cpu, enum r8 reg) {
-    assert(cpu->m_cycle < 1 || (reg == r8_hl && cpu->m_cycle < 2));
-
-    switch (cpu->m_cycle++) {
-    case 0:
-        uint8_t tmp;
-        bool one_more = load_from_r8(cpu, &tmp, reg);
-
-        and_a(cpu, tmp);
-
-        if (one_more) {
-            return;
-        }
-    case 1: prefetch(cpu); break;
-    }
-}
-
-// XOR a, r8 | Opcode: 0x10101xxx | M-cycles: 1/2 | Flags: Z000
-static void xor_a_r8(struct sm83 *cpu, enum r8 reg) {
-    assert(cpu->m_cycle < 1 || (reg == r8_hl && cpu->m_cycle < 2));
-
-    switch (cpu->m_cycle++) {
-    case 0:
-        uint8_t tmp;
-        bool one_more = load_from_r8(cpu, &tmp, reg);
-
-        xor_a(cpu, tmp);
-
-        if (one_more) {
-            return;
-        }
-    case 1: prefetch(cpu); break;
-    }
-}
-
-// OR a, r8 | Opcode: 0x10110xxx | M-cycles: 1/2 | Flags: Z000
-static void or_a_r8(struct sm83 *cpu, enum r8 reg) {
-    assert(cpu->m_cycle < 1 || (reg == r8_hl && cpu->m_cycle < 2));
-
-    switch (cpu->m_cycle++) {
-    case 0:
-        uint8_t tmp;
-        bool one_more = load_from_r8(cpu, &tmp, reg);
-
-        or_a(cpu, tmp);
-
-        if (one_more) {
-            return;
-        }
-    case 1: prefetch(cpu); break;
-    }
-}
-
-// CP a, r8 | Opcode: 0x10111xxx | M-cycles: 1/2 | Flags: Z1HC
-static void cp_a_r8(struct sm83 *cpu, enum r8 reg) {
-    assert(cpu->m_cycle < 1 || (reg == r8_hl && cpu->m_cycle < 2));
-
-    switch (cpu->m_cycle++) {
-    case 0:
-        uint8_t tmp;
-        bool one_more = load_from_r8(cpu, &tmp, reg);
-
-        cp_a(cpu, tmp);
-
-        if (one_more) {
-            return;
-        }
-    case 1: prefetch(cpu); break;
-    }
-}
-
-// ADD a, imm8 | Opcode: 0x11000110 | M-cycles: 2 | Flags: Z0HC
-static void add_a_imm8(struct sm83 *cpu) {
-    assert(cpu->m_cycle < 2);
-
-    switch (cpu->m_cycle++) {
-    case 0: add_a(cpu, bus_read(cpu->bus, cpu->regs.pc++)); break;
-    case 1: prefetch(cpu); break;
-    }
-}
-
-// ADC a, imm8 | Opcode: 0x11001110 | M-cycles: 2 | Flags: Z0HC
-static void adc_a_imm8(struct sm83 *cpu) {
-    assert(cpu->m_cycle < 2);
-
-    switch (cpu->m_cycle++) {
-    case 0: adc_a(cpu, bus_read(cpu->bus, cpu->regs.pc++)); break;
-    case 1: prefetch(cpu); break;
-    }
-}
-
-// SUB a, imm8 | Opcode: 0x11010110 | M-cycles: 2 | Flags: Z0HC
-static void sub_a_imm8(struct sm83 *cpu) {
-    assert(cpu->m_cycle < 2);
-
-    switch (cpu->m_cycle++) {
-    case 0: sub_a(cpu, bus_read(cpu->bus, cpu->regs.pc++)); break;
-    case 1: prefetch(cpu); break;
-    }
-}
-
-// SBC a, imm8 | Opcode: 0x11011110 | M-cycles: 2 | Flags: Z0HC
-static void sbc_a_imm8(struct sm83 *cpu) {
-    assert(cpu->m_cycle < 2);
-
-    switch (cpu->m_cycle++) {
-    case 0: sbc_a(cpu, bus_read(cpu->bus, cpu->regs.pc++)); break;
-    case 1: prefetch(cpu); break;
-    }
-}
-
-// AND a, imm8 | Opcode: 0x11100110 | M-cycles: 2 | Flags: Z010
-static void and_a_imm8(struct sm83 *cpu) {
-    assert(cpu->m_cycle < 2);
-
-    switch (cpu->m_cycle++) {
-    case 0: and_a(cpu, bus_read(cpu->bus, cpu->regs.pc++)); break;
-    case 1: prefetch(cpu); break;
-    }
-}
-
-// XOR a, imm8 | Opcode: 0x11101110 | M-cycles: 2 | Flags: Z000
-static void xor_a_imm8(struct sm83 *cpu) {
-    assert(cpu->m_cycle < 2);
-
-    switch (cpu->m_cycle++) {
-    case 0: xor_a(cpu, bus_read(cpu->bus, cpu->regs.pc++)); break;
-    case 1: prefetch(cpu); break;
-    }
-}
-
-// OR a, imm8 | Opcode: 0x11110110 | M-cycles: 2 | Flags: Z000
-static void or_a_imm8(struct sm83 *cpu) {
-    assert(cpu->m_cycle < 2);
-
-    switch (cpu->m_cycle++) {
-    case 0: or_a(cpu, bus_read(cpu->bus, cpu->regs.pc++)); break;
-    case 1: prefetch(cpu); break;
-    }
-}
-
-// CP a, imm8 | Opcode: 0x11111110 | M-cycles: 2 | Flags: Z1HC
-static void cp_a_imm8(struct sm83 *cpu) {
-    assert(cpu->m_cycle < 2);
-
-    switch (cpu->m_cycle++) {
-    case 0: cp_a(cpu, bus_read(cpu->bus, cpu->regs.pc++)); break;
+        break;
     case 1: prefetch(cpu); break;
     }
 }
@@ -824,86 +655,86 @@ void sm83_m_cycle(struct sm83 *cpu) {
     case 0x7E: ld_r8_r8(cpu, r8_a, r8_hl); break; // LD a, [hl]
     case 0x7F: ld_r8_r8(cpu, r8_a, r8_a); break;  // LD a, a
 
-    case 0x80: add_a_r8(cpu, r8_b); break;  // ADD a, b
-    case 0x81: add_a_r8(cpu, r8_c); break;  // ADD a, c
-    case 0x82: add_a_r8(cpu, r8_d); break;  // ADD a, d
-    case 0x83: add_a_r8(cpu, r8_e); break;  // ADD a, e
-    case 0x84: add_a_r8(cpu, r8_h); break;  // ADD a, h
-    case 0x85: add_a_r8(cpu, r8_l); break;  // ADD a, l
-    case 0x86: add_a_r8(cpu, r8_hl); break; // ADD a, [hl]
-    case 0x87: add_a_r8(cpu, r8_a); break;  // ADD a, a
+    case 0x80: mathop_a_r8(cpu, op_add, r8_b); break;  // ADD a, b
+    case 0x81: mathop_a_r8(cpu, op_add, r8_c); break;  // ADD a, c
+    case 0x82: mathop_a_r8(cpu, op_add, r8_d); break;  // ADD a, d
+    case 0x83: mathop_a_r8(cpu, op_add, r8_e); break;  // ADD a, e
+    case 0x84: mathop_a_r8(cpu, op_add, r8_h); break;  // ADD a, h
+    case 0x85: mathop_a_r8(cpu, op_add, r8_l); break;  // ADD a, l
+    case 0x86: mathop_a_r8(cpu, op_add, r8_hl); break; // ADD a, [hl]
+    case 0x87: mathop_a_r8(cpu, op_add, r8_a); break;  // ADD a, a
 
-    case 0x88: adc_a_r8(cpu, r8_b); break;  // ADC a, b
-    case 0x89: adc_a_r8(cpu, r8_c); break;  // ADC a, c
-    case 0x8A: adc_a_r8(cpu, r8_d); break;  // ADC a, d
-    case 0x8B: adc_a_r8(cpu, r8_e); break;  // ADC a, e
-    case 0x8C: adc_a_r8(cpu, r8_h); break;  // ADC a, h
-    case 0x8D: adc_a_r8(cpu, r8_l); break;  // ADC a, l
-    case 0x8E: adc_a_r8(cpu, r8_hl); break; // ADC a, [hl]
-    case 0x8F: adc_a_r8(cpu, r8_a); break;  // ADC a, a
+    case 0x88: mathop_a_r8(cpu, op_adc, r8_b); break;  // ADC a, b
+    case 0x89: mathop_a_r8(cpu, op_adc, r8_c); break;  // ADC a, c
+    case 0x8A: mathop_a_r8(cpu, op_adc, r8_d); break;  // ADC a, d
+    case 0x8B: mathop_a_r8(cpu, op_adc, r8_e); break;  // ADC a, e
+    case 0x8C: mathop_a_r8(cpu, op_adc, r8_h); break;  // ADC a, h
+    case 0x8D: mathop_a_r8(cpu, op_adc, r8_l); break;  // ADC a, l
+    case 0x8E: mathop_a_r8(cpu, op_adc, r8_hl); break; // ADC a, [hl]
+    case 0x8F: mathop_a_r8(cpu, op_adc, r8_a); break;  // ADC a, a
 
-    case 0x90: sub_a_r8(cpu, r8_b); break;  // SUB a, b
-    case 0x91: sub_a_r8(cpu, r8_c); break;  // SUB a, c
-    case 0x92: sub_a_r8(cpu, r8_d); break;  // SUB a, d
-    case 0x93: sub_a_r8(cpu, r8_e); break;  // SUB a, e
-    case 0x94: sub_a_r8(cpu, r8_h); break;  // SUB a, h
-    case 0x95: sub_a_r8(cpu, r8_l); break;  // SUB a, l
-    case 0x96: sub_a_r8(cpu, r8_hl); break; // SUB a, [hl]
-    case 0x97: sub_a_r8(cpu, r8_a); break;  // SUB a, a
+    case 0x90: mathop_a_r8(cpu, op_sub, r8_b); break;  // SUB a, b
+    case 0x91: mathop_a_r8(cpu, op_sub, r8_c); break;  // SUB a, c
+    case 0x92: mathop_a_r8(cpu, op_sub, r8_d); break;  // SUB a, d
+    case 0x93: mathop_a_r8(cpu, op_sub, r8_e); break;  // SUB a, e
+    case 0x94: mathop_a_r8(cpu, op_sub, r8_h); break;  // SUB a, h
+    case 0x95: mathop_a_r8(cpu, op_sub, r8_l); break;  // SUB a, l
+    case 0x96: mathop_a_r8(cpu, op_sub, r8_hl); break; // SUB a, [hl]
+    case 0x97: mathop_a_r8(cpu, op_sub, r8_a); break;  // SUB a, a
 
-    case 0x98: sbc_a_r8(cpu, r8_b); break;  // SBC a, b
-    case 0x99: sbc_a_r8(cpu, r8_c); break;  // SBC a, c
-    case 0x9A: sbc_a_r8(cpu, r8_d); break;  // SBC a, d
-    case 0x9B: sbc_a_r8(cpu, r8_e); break;  // SBC a, e
-    case 0x9C: sbc_a_r8(cpu, r8_h); break;  // SBC a, h
-    case 0x9D: sbc_a_r8(cpu, r8_l); break;  // SBC a, l
-    case 0x9E: sbc_a_r8(cpu, r8_hl); break; // SBC a, [hl]
-    case 0x9F: sbc_a_r8(cpu, r8_a); break;  // SBC a, a
+    case 0x98: mathop_a_r8(cpu, op_sbc, r8_b); break;  // SBC a, b
+    case 0x99: mathop_a_r8(cpu, op_sbc, r8_c); break;  // SBC a, c
+    case 0x9A: mathop_a_r8(cpu, op_sbc, r8_d); break;  // SBC a, d
+    case 0x9B: mathop_a_r8(cpu, op_sbc, r8_e); break;  // SBC a, e
+    case 0x9C: mathop_a_r8(cpu, op_sbc, r8_h); break;  // SBC a, h
+    case 0x9D: mathop_a_r8(cpu, op_sbc, r8_l); break;  // SBC a, l
+    case 0x9E: mathop_a_r8(cpu, op_sbc, r8_hl); break; // SBC a, [hl]
+    case 0x9F: mathop_a_r8(cpu, op_sbc, r8_a); break;  // SBC a, a
 
-    case 0xA0: and_a_r8(cpu, r8_b); break;  // AND a, b
-    case 0xA1: and_a_r8(cpu, r8_c); break;  // AND a, c
-    case 0xA2: and_a_r8(cpu, r8_d); break;  // AND a, d
-    case 0xA3: and_a_r8(cpu, r8_e); break;  // AND a, e
-    case 0xA4: and_a_r8(cpu, r8_h); break;  // AND a, h
-    case 0xA5: and_a_r8(cpu, r8_l); break;  // AND a, l
-    case 0xA6: and_a_r8(cpu, r8_hl); break; // AND a, [hl]
-    case 0xA7: and_a_r8(cpu, r8_a); break;  // AND a, a
+    case 0xA0: mathop_a_r8(cpu, op_and, r8_b); break;  // AND a, b
+    case 0xA1: mathop_a_r8(cpu, op_and, r8_c); break;  // AND a, c
+    case 0xA2: mathop_a_r8(cpu, op_and, r8_d); break;  // AND a, d
+    case 0xA3: mathop_a_r8(cpu, op_and, r8_e); break;  // AND a, e
+    case 0xA4: mathop_a_r8(cpu, op_and, r8_h); break;  // AND a, h
+    case 0xA5: mathop_a_r8(cpu, op_and, r8_l); break;  // AND a, l
+    case 0xA6: mathop_a_r8(cpu, op_and, r8_hl); break; // AND a, [hl]
+    case 0xA7: mathop_a_r8(cpu, op_and, r8_a); break;  // AND a, a
 
-    case 0xA8: xor_a_r8(cpu, r8_b); break;  // XOR a, b
-    case 0xA9: xor_a_r8(cpu, r8_c); break;  // XOR a, c
-    case 0xAA: xor_a_r8(cpu, r8_d); break;  // XOR a, d
-    case 0xAB: xor_a_r8(cpu, r8_e); break;  // XOR a, e
-    case 0xAC: xor_a_r8(cpu, r8_h); break;  // XOR a, h
-    case 0xAD: xor_a_r8(cpu, r8_l); break;  // XOR a, l
-    case 0xAE: xor_a_r8(cpu, r8_hl); break; // XOR a, [hl]
-    case 0xAF: xor_a_r8(cpu, r8_a); break;  // XOR a, a
+    case 0xA8: mathop_a_r8(cpu, op_xor, r8_b); break;  // XOR a, b
+    case 0xA9: mathop_a_r8(cpu, op_xor, r8_c); break;  // XOR a, c
+    case 0xAA: mathop_a_r8(cpu, op_xor, r8_d); break;  // XOR a, d
+    case 0xAB: mathop_a_r8(cpu, op_xor, r8_e); break;  // XOR a, e
+    case 0xAC: mathop_a_r8(cpu, op_xor, r8_h); break;  // XOR a, h
+    case 0xAD: mathop_a_r8(cpu, op_xor, r8_l); break;  // XOR a, l
+    case 0xAE: mathop_a_r8(cpu, op_xor, r8_hl); break; // XOR a, [hl]
+    case 0xAF: mathop_a_r8(cpu, op_xor, r8_a); break;  // XOR a, a
 
-    case 0xB0: or_a_r8(cpu, r8_b); break;  // OR a, b
-    case 0xB1: or_a_r8(cpu, r8_c); break;  // OR a, c
-    case 0xB2: or_a_r8(cpu, r8_d); break;  // OR a, d
-    case 0xB3: or_a_r8(cpu, r8_e); break;  // OR a, e
-    case 0xB4: or_a_r8(cpu, r8_h); break;  // OR a, h
-    case 0xB5: or_a_r8(cpu, r8_l); break;  // OR a, l
-    case 0xB6: or_a_r8(cpu, r8_hl); break; // OR a, [hl]
-    case 0xB7: or_a_r8(cpu, r8_a); break;  // OR a, a
+    case 0xB0: mathop_a_r8(cpu, op_or, r8_b); break;  // OR a, b
+    case 0xB1: mathop_a_r8(cpu, op_or, r8_c); break;  // OR a, c
+    case 0xB2: mathop_a_r8(cpu, op_or, r8_d); break;  // OR a, d
+    case 0xB3: mathop_a_r8(cpu, op_or, r8_e); break;  // OR a, e
+    case 0xB4: mathop_a_r8(cpu, op_or, r8_h); break;  // OR a, h
+    case 0xB5: mathop_a_r8(cpu, op_or, r8_l); break;  // OR a, l
+    case 0xB6: mathop_a_r8(cpu, op_or, r8_hl); break; // OR a, [hl]
+    case 0xB7: mathop_a_r8(cpu, op_or, r8_a); break;  // OR a, a
 
-    case 0xB8: cp_a_r8(cpu, r8_b); break;  // CP a, b
-    case 0xB9: cp_a_r8(cpu, r8_c); break;  // CP a, c
-    case 0xBA: cp_a_r8(cpu, r8_d); break;  // CP a, d
-    case 0xBB: cp_a_r8(cpu, r8_e); break;  // CP a, e
-    case 0xBC: cp_a_r8(cpu, r8_h); break;  // CP a, h
-    case 0xBD: cp_a_r8(cpu, r8_l); break;  // CP a, l
-    case 0xBE: cp_a_r8(cpu, r8_hl); break; // CP a, [hl]
-    case 0xBF: cp_a_r8(cpu, r8_a); break;  // CP a, a
+    case 0xB8: mathop_a_r8(cpu, op_cp, r8_b); break;  // CP a, b
+    case 0xB9: mathop_a_r8(cpu, op_cp, r8_c); break;  // CP a, c
+    case 0xBA: mathop_a_r8(cpu, op_cp, r8_d); break;  // CP a, d
+    case 0xBB: mathop_a_r8(cpu, op_cp, r8_e); break;  // CP a, e
+    case 0xBC: mathop_a_r8(cpu, op_cp, r8_h); break;  // CP a, h
+    case 0xBD: mathop_a_r8(cpu, op_cp, r8_l); break;  // CP a, l
+    case 0xBE: mathop_a_r8(cpu, op_cp, r8_hl); break; // CP a, [hl]
+    case 0xBF: mathop_a_r8(cpu, op_cp, r8_a); break;  // CP a, a
 
-    case 0xC6: add_a_imm8(cpu); break; // ADD a, imm8
-    case 0xCE: adc_a_imm8(cpu); break; // ADC a, imm8
-    case 0xD6: sub_a_imm8(cpu); break; // SUB a, imm8
-    case 0xDE: sbc_a_imm8(cpu); break; // SBC a, imm8
-    case 0xE6: and_a_imm8(cpu); break; // AND a, imm8
-    case 0xEE: xor_a_imm8(cpu); break; // XOR a, imm8
-    case 0xF6: or_a_imm8(cpu); break;  // OR a, imm8
-    case 0xFE: cp_a_imm8(cpu); break;  // CP a, imm8
+    case 0xC6: mathop_a_imm8(cpu, op_add); break; // ADD a, imm8
+    case 0xCE: mathop_a_imm8(cpu, op_adc); break; // ADC a, imm8
+    case 0xD6: mathop_a_imm8(cpu, op_sub); break; // SUB a, imm8
+    case 0xDE: mathop_a_imm8(cpu, op_sbc); break; // SBC a, imm8
+    case 0xE6: mathop_a_imm8(cpu, op_and); break; // AND a, imm8
+    case 0xEE: mathop_a_imm8(cpu, op_xor); break; // XOR a, imm8
+    case 0xF6: mathop_a_imm8(cpu, op_or); break;  // OR a, imm8
+    case 0xFE: mathop_a_imm8(cpu, op_cp); break;  // CP a, imm8
 
     case 0x10: // STOP (implement later)
     case 0x76: // HALT (implement later)
