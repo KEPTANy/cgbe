@@ -14,7 +14,7 @@ static void prefetch(struct sm83 *cpu) {
     cpu->m_cycle = 0;
 }
 
-static void add(struct sm83 *cpu, uint16_t x) {
+static void add_a(struct sm83 *cpu, uint16_t x) {
     cpu->regs.f = ((cpu->regs.a & 0xF) + (x & 0xF) > 0xF) ? SM83_H_MASK : 0;
     cpu->regs.f |= (cpu->regs.a + x > 0xFF) ? SM83_C_MASK : 0;
 
@@ -23,14 +23,14 @@ static void add(struct sm83 *cpu, uint16_t x) {
     cpu->regs.f |= (cpu->regs.a == 0) ? SM83_Z_MASK : 0;
 }
 
-static void adc(struct sm83 *cpu, uint16_t x) {
+static void adc_a(struct sm83 *cpu, uint16_t x) {
     if (cpu->regs.f & SM83_C_MASK) {
         x++;
     }
-    add(cpu, x);
+    add_a(cpu, x);
 }
 
-static void sub(struct sm83 *cpu, uint16_t x) {
+static void sub_a(struct sm83 *cpu, uint16_t x) {
     cpu->regs.f = ((cpu->regs.a & 0xF) < (x & 0xF)) ? SM83_H_MASK : 0;
     cpu->regs.f |= (cpu->regs.a < x) ? SM83_C_MASK : 0;
 
@@ -39,31 +39,31 @@ static void sub(struct sm83 *cpu, uint16_t x) {
     cpu->regs.f |= (cpu->regs.a == 0) ? SM83_Z_MASK : 0;
 }
 
-static void sbc(struct sm83 *cpu, uint16_t x) {
+static void sbc_a(struct sm83 *cpu, uint16_t x) {
     if (cpu->regs.f & SM83_C_MASK) {
         x++;
     }
-    sub(cpu, x);
+    sub_a(cpu, x);
 }
 
-static void and(struct sm83 *cpu, uint8_t x) {
+static void and_a(struct sm83 *cpu, uint8_t x) {
     cpu->regs.a &= x;
 
     cpu->regs.f = SM83_H_MASK;
     cpu->regs.f |= (cpu->regs.a == 0) ? SM83_Z_MASK : 0;
 }
 
-static void xor(struct sm83 *cpu, uint8_t x) {
+static void xor_a(struct sm83 *cpu, uint8_t x) {
     cpu->regs.a ^= x;
     cpu->regs.f |= (cpu->regs.a == 0) ? SM83_Z_MASK : 0;
 }
 
-static void or(struct sm83 *cpu, uint8_t x) {
+static void or_a(struct sm83 *cpu, uint8_t x) {
     cpu->regs.a |= x;
     cpu->regs.f |= (cpu->regs.a == 0) ? SM83_Z_MASK : 0;
 }
 
-static void cp(struct sm83 *cpu, uint8_t x) {
+static void cp_a(struct sm83 *cpu, uint8_t x) {
     cpu->regs.f = SM83_N_MASK;
     cpu->regs.f |= (cpu->regs.a == x) ? SM83_Z_MASK : 0;
     cpu->regs.f |= (cpu->regs.a < x) ? SM83_C_MASK : 0;
@@ -459,7 +459,7 @@ static void add_a_r8(struct sm83 *cpu, enum r8 reg) {
         uint8_t tmp;
         bool one_more = load_from_r8(cpu, &tmp, reg);
 
-        add(cpu, tmp);
+        add_a(cpu, tmp);
 
         if (one_more) {
             return;
@@ -477,7 +477,7 @@ static void adc_a_r8(struct sm83 *cpu, enum r8 reg) {
         uint8_t tmp;
         bool one_more = load_from_r8(cpu, &tmp, reg);
 
-        adc(cpu, tmp);
+        adc_a(cpu, tmp);
 
         if (one_more) {
             return;
@@ -495,7 +495,7 @@ static void sub_a_r8(struct sm83 *cpu, enum r8 reg) {
         uint8_t tmp;
         bool one_more = load_from_r8(cpu, &tmp, reg);
 
-        sub(cpu, tmp);
+        sub_a(cpu, tmp);
 
         if (one_more) {
             return;
@@ -513,7 +513,7 @@ static void sbc_a_r8(struct sm83 *cpu, enum r8 reg) {
         uint8_t tmp;
         bool one_more = load_from_r8(cpu, &tmp, reg);
 
-        sbc(cpu, tmp);
+        sbc_a(cpu, tmp);
 
         if (one_more) {
             return;
@@ -531,7 +531,7 @@ static void and_a_r8(struct sm83 *cpu, enum r8 reg) {
         uint8_t tmp;
         bool one_more = load_from_r8(cpu, &tmp, reg);
 
-        and(cpu, tmp);
+        and_a(cpu, tmp);
 
         if (one_more) {
             return;
@@ -549,7 +549,7 @@ static void xor_a_r8(struct sm83 *cpu, enum r8 reg) {
         uint8_t tmp;
         bool one_more = load_from_r8(cpu, &tmp, reg);
 
-        xor(cpu, tmp);
+        xor_a(cpu, tmp);
 
         if (one_more) {
             return;
@@ -567,7 +567,7 @@ static void or_a_r8(struct sm83 *cpu, enum r8 reg) {
         uint8_t tmp;
         bool one_more = load_from_r8(cpu, &tmp, reg);
 
-        or(cpu, tmp);
+        or_a(cpu, tmp);
 
         if (one_more) {
             return;
@@ -585,11 +585,91 @@ static void cp_a_r8(struct sm83 *cpu, enum r8 reg) {
         uint8_t tmp;
         bool one_more = load_from_r8(cpu, &tmp, reg);
 
-        cp(cpu, tmp);
+        cp_a(cpu, tmp);
 
         if (one_more) {
             return;
         }
+    case 1: prefetch(cpu); break;
+    }
+}
+
+// ADD a, imm8 | Opcode: 0x11000110 | M-cycles: 2 | Flags: Z0HC
+static void add_a_imm8(struct sm83 *cpu) {
+    assert(cpu->m_cycle < 2);
+
+    switch (cpu->m_cycle++) {
+    case 0: add_a(cpu, bus_read(cpu->bus, cpu->regs.pc++)); break;
+    case 1: prefetch(cpu); break;
+    }
+}
+
+// ADC a, imm8 | Opcode: 0x11001110 | M-cycles: 2 | Flags: Z0HC
+static void adc_a_imm8(struct sm83 *cpu) {
+    assert(cpu->m_cycle < 2);
+
+    switch (cpu->m_cycle++) {
+    case 0: adc_a(cpu, bus_read(cpu->bus, cpu->regs.pc++)); break;
+    case 1: prefetch(cpu); break;
+    }
+}
+
+// SUB a, imm8 | Opcode: 0x11010110 | M-cycles: 2 | Flags: Z0HC
+static void sub_a_imm8(struct sm83 *cpu) {
+    assert(cpu->m_cycle < 2);
+
+    switch (cpu->m_cycle++) {
+    case 0: sub_a(cpu, bus_read(cpu->bus, cpu->regs.pc++)); break;
+    case 1: prefetch(cpu); break;
+    }
+}
+
+// SBC a, imm8 | Opcode: 0x11011110 | M-cycles: 2 | Flags: Z0HC
+static void sbc_a_imm8(struct sm83 *cpu) {
+    assert(cpu->m_cycle < 2);
+
+    switch (cpu->m_cycle++) {
+    case 0: sbc_a(cpu, bus_read(cpu->bus, cpu->regs.pc++)); break;
+    case 1: prefetch(cpu); break;
+    }
+}
+
+// AND a, imm8 | Opcode: 0x11100110 | M-cycles: 2 | Flags: Z010
+static void and_a_imm8(struct sm83 *cpu) {
+    assert(cpu->m_cycle < 2);
+
+    switch (cpu->m_cycle++) {
+    case 0: and_a(cpu, bus_read(cpu->bus, cpu->regs.pc++)); break;
+    case 1: prefetch(cpu); break;
+    }
+}
+
+// XOR a, imm8 | Opcode: 0x11101110 | M-cycles: 2 | Flags: Z000
+static void xor_a_imm8(struct sm83 *cpu) {
+    assert(cpu->m_cycle < 2);
+
+    switch (cpu->m_cycle++) {
+    case 0: xor_a(cpu, bus_read(cpu->bus, cpu->regs.pc++)); break;
+    case 1: prefetch(cpu); break;
+    }
+}
+
+// OR a, imm8 | Opcode: 0x11110110 | M-cycles: 2 | Flags: Z000
+static void or_a_imm8(struct sm83 *cpu) {
+    assert(cpu->m_cycle < 2);
+
+    switch (cpu->m_cycle++) {
+    case 0: or_a(cpu, bus_read(cpu->bus, cpu->regs.pc++)); break;
+    case 1: prefetch(cpu); break;
+    }
+}
+
+// CP a, imm8 | Opcode: 0x11111110 | M-cycles: 2 | Flags: Z1HC
+static void cp_a_imm8(struct sm83 *cpu) {
+    assert(cpu->m_cycle < 2);
+
+    switch (cpu->m_cycle++) {
+    case 0: cp_a(cpu, bus_read(cpu->bus, cpu->regs.pc++)); break;
     case 1: prefetch(cpu); break;
     }
 }
@@ -815,6 +895,15 @@ void sm83_m_cycle(struct sm83 *cpu) {
     case 0xBD: cp_a_r8(cpu, r8_l); break;  // CP a, l
     case 0xBE: cp_a_r8(cpu, r8_hl); break; // CP a, [hl]
     case 0xBF: cp_a_r8(cpu, r8_a); break;  // CP a, a
+
+    case 0xC6: add_a_imm8(cpu); break; // ADD a, imm8
+    case 0xCE: adc_a_imm8(cpu); break; // ADC a, imm8
+    case 0xD6: sub_a_imm8(cpu); break; // SUB a, imm8
+    case 0xDE: sbc_a_imm8(cpu); break; // SBC a, imm8
+    case 0xE6: and_a_imm8(cpu); break; // AND a, imm8
+    case 0xEE: xor_a_imm8(cpu); break; // XOR a, imm8
+    case 0xF6: or_a_imm8(cpu); break;  // OR a, imm8
+    case 0xFE: cp_a_imm8(cpu); break;  // CP a, imm8
 
     case 0x10: // STOP (implement later)
     case 0x76: // HALT (implement later)
