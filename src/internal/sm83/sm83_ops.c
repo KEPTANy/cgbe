@@ -35,9 +35,9 @@ static void ld_r16_imm16(struct sm83 *cpu, enum r16 dest) {
     case 1: cpu->tmp += bus_read(cpu->bus, cpu->regs.pc++) * 256; break;
     case 2:
         switch (dest) {
-        case r16_bc: cpu->regs.b = cpu->tmp; break;
-        case r16_de: cpu->regs.d = cpu->tmp; break;
-        case r16_hl: cpu->regs.h = cpu->tmp; break;
+        case r16_bc: cpu->regs.bc = cpu->tmp; break;
+        case r16_de: cpu->regs.de = cpu->tmp; break;
+        case r16_hl: cpu->regs.hl = cpu->tmp; break;
         case r16_sp: cpu->regs.sp = cpu->tmp; break;
         }
         prefetch(cpu);
