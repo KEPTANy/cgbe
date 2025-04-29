@@ -748,6 +748,173 @@ static void sbc_a_r8(struct sm83 *cpu, enum r8 reg) {
     }
 }
 
+// AND a, r8
+// Opcode: 0x10100xxx
+// M-cycles: 1/2 (2 for [hl])
+// Flags: Z010
+static void and_a_r8(struct sm83 *cpu, enum r8 reg) {
+    assert(cpu->m_cycle < 1 || (reg == r8_hl && cpu->m_cycle < 2));
+
+    bool one_more = false;
+    switch (cpu->m_cycle++) {
+    case 0:
+        uint8_t val;
+        switch (reg) {
+        case r8_a: val = cpu->regs.a; break;
+        case r8_b: val = cpu->regs.b; break;
+        case r8_c: val = cpu->regs.c; break;
+        case r8_d: val = cpu->regs.d; break;
+        case r8_e: val = cpu->regs.e; break;
+        case r8_h: val = cpu->regs.h; break;
+        case r8_l: val = cpu->regs.l; break;
+        case r8_hl:
+            val = bus_read(cpu->bus, cpu->regs.hl);
+            one_more = true;
+        }
+
+        cpu->regs.a &= val;
+
+        cpu->regs.f = SM83_H_MASK;
+        if (cpu->regs.a == 0) {
+            cpu->regs.f |= SM83_Z_MASK;
+        }
+
+        if (one_more) {
+            return;
+        }
+
+        [[fallthrough]];
+    case 1: prefetch(cpu); break;
+    }
+}
+
+// XOR a, r8
+// Opcode: 0x10101xxx
+// M-cycles: 1/2 (2 for [hl])
+// Flags: Z000
+static void xor_a_r8(struct sm83 *cpu, enum r8 reg) {
+    assert(cpu->m_cycle < 1 || (reg == r8_hl && cpu->m_cycle < 2));
+
+    bool one_more = false;
+    switch (cpu->m_cycle++) {
+    case 0:
+        uint8_t val;
+        switch (reg) {
+        case r8_a: val = cpu->regs.a; break;
+        case r8_b: val = cpu->regs.b; break;
+        case r8_c: val = cpu->regs.c; break;
+        case r8_d: val = cpu->regs.d; break;
+        case r8_e: val = cpu->regs.e; break;
+        case r8_h: val = cpu->regs.h; break;
+        case r8_l: val = cpu->regs.l; break;
+        case r8_hl:
+            val = bus_read(cpu->bus, cpu->regs.hl);
+            one_more = true;
+        }
+
+        cpu->regs.a ^= val;
+
+        cpu->regs.f = 0;
+        if (cpu->regs.a == 0) {
+            cpu->regs.f |= SM83_Z_MASK;
+        }
+
+        if (one_more) {
+            return;
+        }
+
+        [[fallthrough]];
+    case 1: prefetch(cpu); break;
+    }
+}
+
+// OR a, r8
+// Opcode: 0x10110xxx
+// M-cycles: 1/2 (2 for [hl])
+// Flags: Z000
+static void or_a_r8(struct sm83 *cpu, enum r8 reg) {
+    assert(cpu->m_cycle < 1 || (reg == r8_hl && cpu->m_cycle < 2));
+
+    bool one_more = false;
+    switch (cpu->m_cycle++) {
+    case 0:
+        uint8_t val;
+        switch (reg) {
+        case r8_a: val = cpu->regs.a; break;
+        case r8_b: val = cpu->regs.b; break;
+        case r8_c: val = cpu->regs.c; break;
+        case r8_d: val = cpu->regs.d; break;
+        case r8_e: val = cpu->regs.e; break;
+        case r8_h: val = cpu->regs.h; break;
+        case r8_l: val = cpu->regs.l; break;
+        case r8_hl:
+            val = bus_read(cpu->bus, cpu->regs.hl);
+            one_more = true;
+        }
+
+        cpu->regs.a |= val;
+
+        cpu->regs.f = 0;
+        if (cpu->regs.a == 0) {
+            cpu->regs.f |= SM83_Z_MASK;
+        }
+
+        if (one_more) {
+            return;
+        }
+
+        [[fallthrough]];
+    case 1: prefetch(cpu); break;
+    }
+}
+
+// CP a, r8
+// Opcode: 0x10111xxx
+// M-cycles: 1/2 (2 for [hl])
+// Flags: Z1HC
+static void cp_a_r8(struct sm83 *cpu, enum r8 reg) {
+    assert(cpu->m_cycle < 1 || (reg == r8_hl && cpu->m_cycle < 2));
+
+    bool one_more = false;
+    switch (cpu->m_cycle++) {
+    case 0:
+        uint8_t val = cpu->regs.a;
+        switch (reg) {
+        case r8_a: val = cpu->regs.a; break;
+        case r8_b: val = cpu->regs.b; break;
+        case r8_c: val = cpu->regs.c; break;
+        case r8_d: val = cpu->regs.d; break;
+        case r8_e: val = cpu->regs.e; break;
+        case r8_h: val = cpu->regs.h; break;
+        case r8_l: val = cpu->regs.l; break;
+        case r8_hl:
+            val = bus_read(cpu->bus, cpu->regs.hl);
+            one_more = true;
+        }
+
+        cpu->regs.f = SM83_N_MASK;
+
+        if (cpu->regs.a == val) {
+            cpu->regs.f |= SM83_Z_MASK;
+        }
+
+        if (cpu->regs.a < val) {
+            cpu->regs.f |= SM83_C_MASK;
+        }
+
+        if ((cpu->regs.a & 0xF) < (val & 0xF)) {
+            cpu->regs.f |= SM83_H_MASK;
+        }
+
+        if (one_more) {
+            return;
+        }
+
+        [[fallthrough]];
+    case 1: prefetch(cpu); break;
+    }
+}
+
 void sm83_m_cycle(struct sm83 *cpu) {
     switch (cpu->opcode) {
     case 0x00: nop(cpu); break; // NOP
@@ -933,6 +1100,42 @@ void sm83_m_cycle(struct sm83 *cpu) {
     case 0x9D: sbc_a_r8(cpu, r8_l); break;  // SBC a, l
     case 0x9E: sbc_a_r8(cpu, r8_hl); break; // SBC a, [hl]
     case 0x9F: sbc_a_r8(cpu, r8_a); break;  // SBC a, a
+
+    case 0xA0: and_a_r8(cpu, r8_b); break;  // AND a, b
+    case 0xA1: and_a_r8(cpu, r8_c); break;  // AND a, c
+    case 0xA2: and_a_r8(cpu, r8_d); break;  // AND a, d
+    case 0xA3: and_a_r8(cpu, r8_e); break;  // AND a, e
+    case 0xA4: and_a_r8(cpu, r8_h); break;  // AND a, h
+    case 0xA5: and_a_r8(cpu, r8_l); break;  // AND a, l
+    case 0xA6: and_a_r8(cpu, r8_hl); break; // AND a, [hl]
+    case 0xA7: and_a_r8(cpu, r8_a); break;  // AND a, a
+
+    case 0xA8: xor_a_r8(cpu, r8_b); break;  // XOR a, b
+    case 0xA9: xor_a_r8(cpu, r8_c); break;  // XOR a, c
+    case 0xAA: xor_a_r8(cpu, r8_d); break;  // XOR a, d
+    case 0xAB: xor_a_r8(cpu, r8_e); break;  // XOR a, e
+    case 0xAC: xor_a_r8(cpu, r8_h); break;  // XOR a, h
+    case 0xAD: xor_a_r8(cpu, r8_l); break;  // XOR a, l
+    case 0xAE: xor_a_r8(cpu, r8_hl); break; // XOR a, [hl]
+    case 0xAF: xor_a_r8(cpu, r8_a); break;  // XOR a, a
+
+    case 0xB0: or_a_r8(cpu, r8_b); break;  // OR a, b
+    case 0xB1: or_a_r8(cpu, r8_c); break;  // OR a, c
+    case 0xB2: or_a_r8(cpu, r8_d); break;  // OR a, d
+    case 0xB3: or_a_r8(cpu, r8_e); break;  // OR a, e
+    case 0xB4: or_a_r8(cpu, r8_h); break;  // OR a, h
+    case 0xB5: or_a_r8(cpu, r8_l); break;  // OR a, l
+    case 0xB6: or_a_r8(cpu, r8_hl); break; // OR a, [hl]
+    case 0xB7: or_a_r8(cpu, r8_a); break;  // OR a, a
+
+    case 0xB8: cp_a_r8(cpu, r8_b); break;  // CP a, b
+    case 0xB9: cp_a_r8(cpu, r8_c); break;  // CP a, c
+    case 0xBA: cp_a_r8(cpu, r8_d); break;  // CP a, d
+    case 0xBB: cp_a_r8(cpu, r8_e); break;  // CP a, e
+    case 0xBC: cp_a_r8(cpu, r8_h); break;  // CP a, h
+    case 0xBD: cp_a_r8(cpu, r8_l); break;  // CP a, l
+    case 0xBE: cp_a_r8(cpu, r8_hl); break; // CP a, [hl]
+    case 0xBF: cp_a_r8(cpu, r8_a); break;  // CP a, a
 
     case 0x10: // STOP (implement later)
     case 0x76: // HALT (implement later)
