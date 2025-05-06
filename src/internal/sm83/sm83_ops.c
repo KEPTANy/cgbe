@@ -505,6 +505,34 @@ static void mathop_a_imm8(struct sm83 *cpu, enum mathop op) {
     }
 }
 
+// RET cond | Opcode: 0x110xx000 | M-cycles: 2/5 | Flags: ----
+static void ret_cond(struct sm83 *cpu, enum cond cc) {
+    bool z = cpu->regs.f & SM83_Z_MASK;
+    bool c = cpu->regs.f & SM83_C_MASK;
+
+    bool cond = (cc == cond_z && z) || (cc == cond_nz && !z) || (cc == cond_c && c) ||
+                (cc == cond_nc && !c);
+
+    assert(cpu->m_cycle < 12 || (cond && cpu->m_cycle < 5));
+
+    switch (cpu->m_cycle++) {
+    // case 0:
+    case 1:
+        if (cond) {
+            cpu->tmp.lo = bus_read(cpu->bus, cpu->regs.sp++);
+        } else {
+            prefetch(cpu);
+        }
+        break;
+    case 2:
+        cpu->tmp.hi = bus_read(cpu->bus, cpu->regs.sp++);
+        cpu->regs.pc = cpu->tmp.hilo;
+        break;
+    // case 3:
+    case 4: prefetch(cpu); break;
+    }
+}
+
 void sm83_m_cycle(struct sm83 *cpu) {
     switch (cpu->opcode) {
     case 0x00: nop(cpu); break; // NOP
@@ -736,8 +764,13 @@ void sm83_m_cycle(struct sm83 *cpu) {
     case 0xF6: mathop_a_imm8(cpu, op_or); break;  // OR a, imm8
     case 0xFE: mathop_a_imm8(cpu, op_cp); break;  // CP a, imm8
 
-    case 0x10: // STOP (implement later)
-    case 0x76: // HALT (implement later)
+    case 0xC0: ret_cond(cpu, cond_nz); break; // RET NZ
+    case 0xC7: ret_cond(cpu, cond_z); break;  // RET Z
+    case 0xD0: ret_cond(cpu, cond_nc); break; // RET NC
+    case 0xD7: ret_cond(cpu, cond_c); break;  // RET C
+
+    case 0x10:      // STOP (implement later)
+    case 0x76:      // HALT (implement later)
     default: break; // Invalid opcodes, pc doesn't change making an inf loop
     }
 }
