@@ -294,7 +294,7 @@ static void ld_r8_imm8(struct sm83 *cpu, enum r8 reg) {
     case 0: cpu->tmp.lo = bus_read(cpu->bus, cpu->regs.pc++); break;
     case 1:
         if (load_to_r8(cpu, reg, cpu->tmp.lo)) {
-            return;
+            break;
         }
     case 2: prefetch(cpu); break;
     }
@@ -427,7 +427,7 @@ static void jr_cond_imm8(struct sm83 *cpu, enum cond cc) {
     case 1:
         if (cond) {
             cpu->regs.pc += (int8_t)cpu->tmp.lo;
-            return;
+            break;
         }
     case 2: prefetch(cpu); break;
     }
@@ -444,7 +444,7 @@ static void ld_r8_r8(struct sm83 *cpu, enum r8 dest, enum r8 source) {
         one_more |= load_to_r8(cpu, dest, tmp);
 
         if (one_more) {
-            return;
+            break;
         }
     case 1: prefetch(cpu); break;
     }
@@ -474,7 +474,7 @@ static void mathop_a_r8(struct sm83 *cpu, enum mathop op, enum r8 reg) {
         }
 
         if (one_more) {
-            return;
+            break;
         }
     case 1: prefetch(cpu); break;
     }
@@ -513,7 +513,7 @@ static void ret_cond(struct sm83 *cpu, enum cond cc) {
     bool cond = (cc == cond_z && z) || (cc == cond_nz && !z) || (cc == cond_c && c) ||
                 (cc == cond_nc && !c);
 
-    assert(cpu->m_cycle < 12 || (cond && cpu->m_cycle < 5));
+    assert(cpu->m_cycle < 2 || (cond && cpu->m_cycle < 5));
 
     switch (cpu->m_cycle++) {
     // case 0:
@@ -769,8 +769,8 @@ void sm83_m_cycle(struct sm83 *cpu) {
     case 0xD0: ret_cond(cpu, cond_nc); break; // RET NC
     case 0xD7: ret_cond(cpu, cond_c); break;  // RET C
 
-    case 0x10:      // STOP (implement later)
-    case 0x76:      // HALT (implement later)
-    default: break; // Invalid opcodes, pc doesn't change making an inf loop
+    case 0x10: exit(1); // STOP (implement later)
+    case 0x76: exit(1); // HALT (implement later)
+    default: break;     // Invalid opcodes, pc doesn't change making an inf loop
     }
 }
