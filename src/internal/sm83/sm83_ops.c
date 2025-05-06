@@ -533,6 +533,21 @@ static void ret_cond(struct sm83 *cpu, enum cond cc) {
     }
 }
 
+// RET | Opcode: 0x11001001 | M-cycles: 4 | Flags: ----
+static void ret(struct sm83 *cpu) {
+    assert(cpu->m_cycle < 4);
+
+    switch (cpu->m_cycle++) {
+    case 0: cpu->tmp.lo = bus_read(cpu->bus, cpu->regs.sp++); break;
+    case 1:
+        cpu->tmp.hi = bus_read(cpu->bus, cpu->regs.sp++);
+        cpu->regs.pc = cpu->tmp.hilo;
+        break;
+    // case 2:
+    case 3: prefetch(cpu); break;
+    }
+}
+
 void sm83_m_cycle(struct sm83 *cpu) {
     switch (cpu->opcode) {
     case 0x00: nop(cpu); break; // NOP
@@ -766,8 +781,10 @@ void sm83_m_cycle(struct sm83 *cpu) {
 
     case 0xC0: ret_cond(cpu, cond_nz); break; // RET NZ
     case 0xC7: ret_cond(cpu, cond_z); break;  // RET Z
+    case 0xC9: ret(cpu); break;               // RET
     case 0xD0: ret_cond(cpu, cond_nc); break; // RET NC
     case 0xD7: ret_cond(cpu, cond_c); break;  // RET C
+    case 0xD9: exit(1);                       // RETI (implement later)
 
     case 0x10: exit(1); // STOP (implement later)
     case 0x76: exit(1); // HALT (implement later)
