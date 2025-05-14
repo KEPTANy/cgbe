@@ -170,7 +170,7 @@ static void ld_imm16_sp(struct sm83 *cpu) {
     switch (cpu->m_cycle++) {
     case 0: cpu->tmp.lo = bus_read(cpu->bus, cpu->regs.pc++); break;
     case 1: cpu->tmp.hi = bus_read(cpu->bus, cpu->regs.pc++); break;
-    case 2: bus_write(cpu->bus, cpu->tmp.hilo++, cpu->regs.pc & 0xFF); break;
+    case 2: bus_write(cpu->bus, cpu->tmp.hilo++, cpu->regs.pc % 256); break;
     case 3: bus_write(cpu->bus, cpu->tmp.hilo, cpu->regs.pc / 256); break;
     case 4: prefetch(cpu); break;
     }
