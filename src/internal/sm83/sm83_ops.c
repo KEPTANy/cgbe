@@ -1,3 +1,4 @@
+#include "internal/memory/bus.h"
 #include "internal/sm83/sm83.h"
 
 #include <assert.h>
@@ -589,6 +590,44 @@ static void jp_hl(struct sm83 *cpu) {
     prefetch(cpu);
 }
 
+// CALL cond, imm16 | Opcode: 0x110cc100 | M-cycles: 3/6 | Flags: ----
+static void call_cond_imm16(struct sm83 *cpu, enum cond cc) {
+    bool z = cpu->regs.f & SM83_Z_MASK;
+    bool c = cpu->regs.f & SM83_C_MASK;
+
+    bool cond = (cc == cond_z && z) || (cc == cond_nz && !z) || (cc == cond_c && c) ||
+                (cc == cond_nc && !c);
+
+    assert(cpu->m_cycle < 3 || (cond && cpu->m_cycle < 6));
+
+    switch (cpu->m_cycle++) {
+    case 0: cpu->tmp.lo = bus_read(cpu->bus, cpu->regs.sp++); break;
+    case 1: cpu->tmp.hi = bus_read(cpu->bus, cpu->regs.sp++); break;
+    case 2:
+        if (!cc) {
+            prefetch(cpu);
+        }
+        break;
+    case 3: bus_write(cpu->bus, --cpu->regs.sp, cpu->regs.pc / 256); break;
+    case 4: bus_write(cpu->bus, --cpu->regs.sp, cpu->regs.pc % 256); break;
+    case 5: prefetch(cpu); break;
+    }
+}
+
+// CALL imm16 | Opcode: 0x11001101 | M-cycles: 6 | Flags: ----
+static void call_imm16(struct sm83 *cpu) {
+    assert(cpu->m_cycle < 6);
+
+    switch (cpu->m_cycle++) {
+    case 0: cpu->tmp.lo = bus_read(cpu->bus, cpu->regs.sp++); break;
+    case 1: cpu->tmp.hi = bus_read(cpu->bus, cpu->regs.sp++); break;
+    // case 2:
+    case 3: bus_write(cpu->bus, --cpu->regs.sp, cpu->regs.pc / 256); break;
+    case 4: bus_write(cpu->bus, --cpu->regs.sp, cpu->regs.pc % 256); break;
+    case 5: prefetch(cpu); break;
+    }
+}
+
 void sm83_m_cycle(struct sm83 *cpu) {
     switch (cpu->opcode) {
     case 0x00: nop(cpu); break; // NOP
@@ -834,6 +873,13 @@ void sm83_m_cycle(struct sm83 *cpu) {
 
     case 0xC3: jp_imm16(cpu); break; // JP imm16
     case 0xE9: jp_hl(cpu); break;    // JP hl
+
+    case 0xC4: call_cond_imm16(cpu, cond_nz); break; // CALL nz, imm16
+    case 0xCC: call_cond_imm16(cpu, cond_z); break;  // CALL z, imm16
+    case 0xD4: call_cond_imm16(cpu, cond_nc); break; // CALL nc, imm16
+    case 0xDC: call_cond_imm16(cpu, cond_c); break;  // CALL c, imm16
+
+    case 0xCD: call_imm16(cpu); break; // CALL imm16
 
     case 0x10: exit(1); // STOP (implement later)
     case 0x76: exit(1); // HALT (implement later)
