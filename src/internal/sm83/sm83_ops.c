@@ -548,6 +548,47 @@ static void ret(struct sm83 *cpu) {
     }
 }
 
+// JP cond, imm16 | Opcode: 0x110cc010 | M-cycles: 3/4 | Flags: ----
+static void jp_cond_imm16(struct sm83 *cpu, enum cond cc) {
+    bool z = cpu->regs.f & SM83_Z_MASK;
+    bool c = cpu->regs.f & SM83_C_MASK;
+
+    bool cond = (cc == cond_z && z) || (cc == cond_nz && !z) || (cc == cond_c && c) ||
+                (cc == cond_nc && !c);
+
+    assert(cpu->m_cycle < 3 || (cond && cpu->m_cycle < 4));
+
+    switch (cpu->m_cycle++) {
+    case 0: cpu->tmp.lo = bus_read(cpu->bus, cpu->regs.sp++); break;
+    case 1: cpu->tmp.hi = bus_read(cpu->bus, cpu->regs.sp++); break;
+    case 2:
+        if (cc) {
+            cpu->regs.pc = cpu->tmp.hilo;
+            break;
+        }
+    case 3: prefetch(cpu); break;
+    }
+}
+
+// JP imm16 | Opcode: 0x11000011 | M-cycles: 4 | Flags: ----
+static void jp_imm16(struct sm83 *cpu) {
+    assert(cpu->m_cycle < 4);
+
+    switch (cpu->m_cycle++) {
+    case 0: cpu->tmp.lo = bus_read(cpu->bus, cpu->regs.sp++); break;
+    case 1: cpu->tmp.hi = bus_read(cpu->bus, cpu->regs.sp++); break;
+    case 2: cpu->regs.pc = cpu->tmp.hilo; break;
+    case 3: prefetch(cpu); break;
+    }
+}
+
+// JP hl | Opcode: 0x11001001 | M-cycles: 1 | Flags: ----
+static void jp_hl(struct sm83 *cpu) {
+    assert(cpu->m_cycle < 1);
+    cpu->regs.pc = cpu->regs.hl;
+    prefetch(cpu);
+}
+
 void sm83_m_cycle(struct sm83 *cpu) {
     switch (cpu->opcode) {
     case 0x00: nop(cpu); break; // NOP
@@ -785,6 +826,14 @@ void sm83_m_cycle(struct sm83 *cpu) {
     case 0xD0: ret_cond(cpu, cond_nc); break; // RET NC
     case 0xD7: ret_cond(cpu, cond_c); break;  // RET C
     case 0xD9: exit(1);                       // RETI (implement later)
+
+    case 0xC2: jp_cond_imm16(cpu, cond_nz); break; // JP nz, imm16
+    case 0xCA: jp_cond_imm16(cpu, cond_z); break;  // JP z, imm16
+    case 0xD2: jp_cond_imm16(cpu, cond_nc); break; // JP nc, imm16
+    case 0xDA: jp_cond_imm16(cpu, cond_c); break;  // JP c, imm16
+
+    case 0xC3: jp_imm16(cpu); break; // JP imm16
+    case 0xE9: jp_hl(cpu); break;    // JP hl
 
     case 0x10: exit(1); // STOP (implement later)
     case 0x76: exit(1); // HALT (implement later)
