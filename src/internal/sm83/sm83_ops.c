@@ -628,6 +628,21 @@ static void call_imm16(struct sm83 *cpu) {
     }
 }
 
+// RST vec | Opcode: 0x11xxx111 | M-cycles: 4 | Flags: ----
+static void rst(struct sm83 *cpu, uint16_t vec) {
+    assert(cpu->m_cycle < 4);
+
+    switch (cpu->m_cycle++) {
+    // case 0:
+    case 1: bus_write(cpu->bus, --cpu->regs.sp, cpu->regs.pc / 256); break;
+    case 2:
+        bus_write(cpu->bus, --cpu->regs.sp, cpu->regs.pc % 256);
+        cpu->regs.pc = vec;
+        break;
+    case 3: prefetch(cpu); break;
+    }
+}
+
 void sm83_m_cycle(struct sm83 *cpu) {
     switch (cpu->opcode) {
     case 0x00: nop(cpu); break; // NOP
@@ -880,6 +895,15 @@ void sm83_m_cycle(struct sm83 *cpu) {
     case 0xDC: call_cond_imm16(cpu, cond_c); break;  // CALL c, imm16
 
     case 0xCD: call_imm16(cpu); break; // CALL imm16
+
+    case 0xC7: rst(cpu, 0x00); // RST 00h
+    case 0xCF: rst(cpu, 0x08); // RST 08h
+    case 0xD7: rst(cpu, 0x10); // RST 10h
+    case 0xDF: rst(cpu, 0x18); // RST 18h
+    case 0xE7: rst(cpu, 0x20); // RST 20h
+    case 0xEF: rst(cpu, 0x28); // RST 28h
+    case 0xF7: rst(cpu, 0x30); // RST 30h
+    case 0xFF: rst(cpu, 0x38); // RST 38h
 
     case 0x10: exit(1); // STOP (implement later)
     case 0x76: exit(1); // HALT (implement later)
