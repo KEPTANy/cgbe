@@ -860,10 +860,10 @@ void sm83_m_cycle(struct sm83 *cpu) {
     case 0xFE: mathop_a_imm8(cpu, op_cp); break;  // CP a, imm8
 
     case 0xC0: ret_cond(cpu, cond_nz); break; // RET NZ
-    case 0xC7: ret_cond(cpu, cond_z); break;  // RET Z
+    case 0xC8: ret_cond(cpu, cond_z); break;  // RET Z
     case 0xC9: ret(cpu); break;               // RET
     case 0xD0: ret_cond(cpu, cond_nc); break; // RET NC
-    case 0xD7: ret_cond(cpu, cond_c); break;  // RET C
+    case 0xD8: ret_cond(cpu, cond_c); break;  // RET C
     case 0xD9: exit(1);                       // RETI (implement later)
 
     case 0xC2: jp_cond_imm16(cpu, cond_nz); break; // JP nz, imm16
