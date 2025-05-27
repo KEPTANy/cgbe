@@ -762,6 +762,7 @@ static void set(struct sm83 *cpu, enum r8 reg, uint8_t idx);
 static void cb_prefix(struct sm83 *cpu) {
     if (cpu->m_cycle == 0) {
         cpu->tmp.lo = bus_read(cpu->bus, cpu->regs.pc++);
+        cpu->m_cycle++;
         return;
     }
 
@@ -1072,6 +1073,6 @@ void sm83_m_cycle(struct sm83 *cpu) {
     case 0xF3: exit(1); // DI (implement later)
     case 0xFB: exit(1); // EI (implement later)
 
-    default: break;     // Invalid opcodes, pc doesn't change making an inf loop
+    default: break; // Invalid opcodes, pc doesn't change making an inf loop
     }
 }
