@@ -334,7 +334,7 @@ static void rra(struct sm83 *cpu) {
     assert(cpu->m_cycle < 1);
 
     bool c = cpu->regs.f & SM83_C_MASK;
-    cpu->regs.f = (cpu->regs.a & (1 << 7)) ? SM83_C_MASK : 0;
+    cpu->regs.f = (cpu->regs.a & 1) ? SM83_C_MASK : 0;
     cpu->regs.a = (cpu->regs.a << 1) | (c ? (1 << 7) : 0);
     prefetch(cpu);
 }
