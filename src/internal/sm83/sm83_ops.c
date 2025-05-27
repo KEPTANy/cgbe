@@ -681,6 +681,72 @@ static void push(struct sm83 *cpu, enum r16stk r) {
     }
 }
 
+// LDH [imm8], a | Opcode: 0b11100000 | M-cycles: 3 | Flags: ----
+static void ldh_imm8_a(struct sm83 *cpu) {
+    assert(cpu->m_cycle < 3);
+
+    switch (cpu->m_cycle++) {
+    case 0: cpu->tmp.lo = bus_read(cpu->bus, cpu->regs.pc++); break;
+    case 1: bus_write(cpu->bus, 0xFF00 + cpu->tmp.lo, cpu->regs.a); break;
+    case 2: prefetch(cpu); break;
+    }
+}
+
+// LDH a, [imm8] | Opcode: 0b11110000 | M-cycles: 3 | Flags: ----
+static void ldh_a_imm8(struct sm83 *cpu) {
+    assert(cpu->m_cycle < 3);
+
+    switch (cpu->m_cycle++) {
+    case 0: cpu->tmp.lo = bus_read(cpu->bus, cpu->regs.pc++); break;
+    case 1: cpu->regs.a = bus_read(cpu->bus, 0xFF00 + cpu->tmp.lo); break;
+    case 2: prefetch(cpu); break;
+    }
+}
+
+// LDH [c], a | Opcode: 0b11100010 | M-cycles: 2 | Flags: ----
+static void ldh_c_a(struct sm83 *cpu) {
+    assert(cpu->m_cycle < 2);
+
+    switch (cpu->m_cycle++) {
+    case 0: bus_write(cpu->bus, 0xFF00 + cpu->regs.c, cpu->regs.a); break;
+    case 1: prefetch(cpu); break;
+    }
+}
+
+// LDH a, [c] | Opcode: 0b11110010 | M-cycles: 2 | Flags: ----
+static void ldh_a_c(struct sm83 *cpu) {
+    assert(cpu->m_cycle < 2);
+
+    switch (cpu->m_cycle++) {
+    case 0: cpu->regs.a = bus_read(cpu->bus, 0xFF00 + cpu->regs.c); break;
+    case 1: prefetch(cpu); break;
+    }
+}
+
+// LD [imm16], a | Opcode: 0b11101010 | M-cycles: 4 | Flags: ----
+static void ld_imm16_a(struct sm83 *cpu) {
+    assert(cpu->m_cycle < 4);
+
+    switch (cpu->m_cycle++) {
+    case 0: cpu->tmp.lo = bus_read(cpu->bus, cpu->regs.pc++); break;
+    case 1: cpu->tmp.hi = bus_read(cpu->bus, cpu->regs.pc++); break;
+    case 2: bus_write(cpu->bus, cpu->tmp.hilo, cpu->regs.a); break;
+    case 3: prefetch(cpu); break;
+    }
+}
+
+// LD a, [imm16] | Opcode: 0b11111010 | M-cycles: 4 | Flags: ----
+static void ld_a_imm16(struct sm83 *cpu) {
+    assert(cpu->m_cycle < 4);
+
+    switch (cpu->m_cycle++) {
+    case 0: cpu->tmp.lo = bus_read(cpu->bus, cpu->regs.pc++); break;
+    case 1: cpu->tmp.hi = bus_read(cpu->bus, cpu->regs.pc++); break;
+    case 2: cpu->regs.a = bus_read(cpu->bus, cpu->tmp.hilo); break;
+    case 3: prefetch(cpu); break;
+    }
+}
+
 void sm83_m_cycle(struct sm83 *cpu) {
     switch (cpu->opcode) {
     case 0x00: nop(cpu); break; // NOP
@@ -952,6 +1018,15 @@ void sm83_m_cycle(struct sm83 *cpu) {
     case 0xD5: push(cpu, r16stk_de); break; // PUSH DE
     case 0xE5: push(cpu, r16stk_hl); break; // PUSH HL
     case 0xF5: push(cpu, r16stk_af); break; // PUSH AF
+
+    case 0xE0: ldh_imm8_a(cpu); break; // LDH [0xFF00 + imm8], a
+    case 0xF0: ldh_a_imm8(cpu); break; // LDH a, [0xFF00 + imm8]
+
+    case 0xE2: ldh_c_a(cpu); break; // LDH [0xFF00 + c], a
+    case 0xF2: ldh_a_c(cpu); break; // LDH a, [0xFF00 + c]
+
+    case 0xEA: ld_imm16_a(cpu); break; // LD [imm16], a
+    case 0xFA: ld_a_imm16(cpu); break; // LD a, [imm16]
 
     case 0x10: exit(1); // STOP (implement later)
     case 0x76: exit(1); // HALT (implement later)
