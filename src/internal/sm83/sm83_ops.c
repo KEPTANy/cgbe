@@ -1030,6 +1030,9 @@ void sm83_m_cycle(struct sm83 *cpu) {
 
     case 0x10: exit(1); // STOP (implement later)
     case 0x76: exit(1); // HALT (implement later)
+    case 0xF3: exit(1); // DI (implement later)
+    case 0xFB: exit(1); // EI (implement later)
+
     default: break;     // Invalid opcodes, pc doesn't change making an inf loop
     }
 }
