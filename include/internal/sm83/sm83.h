@@ -30,6 +30,7 @@
 #define SM83_N_MASK (1 << 6)
 #define SM83_H_MASK (1 << 5)
 #define SM83_C_MASK (1 << 4)
+#define SM83_ALL_FLAGS (SM83_Z_MASK | SM83_N_MASK | SM83_H_MASK | SM83_C_MASK)
 
 struct sm83_register_file {
     SM83_REGISTER_PAIR(a, f);

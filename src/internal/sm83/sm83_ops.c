@@ -643,6 +643,44 @@ static void rst(struct sm83 *cpu, uint16_t vec) {
     }
 }
 
+// POP r16stk | Opcode: 0x11xx0101 | M-cycles: 3 | Flags: ----
+static void pop(struct sm83 *cpu, enum r16stk r) {
+    assert(cpu->m_cycle < 3);
+
+    switch (cpu->m_cycle++) {
+    case 0: cpu->tmp.lo = bus_read(cpu->bus, cpu->regs.sp++); break;
+    case 1: cpu->tmp.hi = bus_read(cpu->bus, cpu->regs.sp++); break;
+    case 2:
+        switch (r) {
+        case r16stk_af: cpu->regs.af = cpu->tmp.hilo & SM83_ALL_FLAGS; break;
+        case r16stk_bc: cpu->regs.bc = cpu->tmp.hilo; break;
+        case r16stk_de: cpu->regs.de = cpu->tmp.hilo; break;
+        case r16stk_hl: cpu->regs.hl = cpu->tmp.hilo; break;
+        }
+        prefetch(cpu);
+        break;
+    }
+}
+
+// PUSH r16stk | Opcode: 0x11xx0001 | M-cycles: 4 | Flags: ----
+static void push(struct sm83 *cpu, enum r16stk r) {
+    assert(cpu->m_cycle < 4);
+
+    switch (cpu->m_cycle++) {
+    case 0:
+        switch (r) {
+        case r16stk_af: cpu->tmp.hilo = cpu->regs.af & SM83_ALL_FLAGS; break;
+        case r16stk_bc: cpu->tmp.hilo = cpu->regs.bc; break;
+        case r16stk_de: cpu->tmp.hilo = cpu->regs.de; break;
+        case r16stk_hl: cpu->tmp.hilo = cpu->regs.hl; break;
+        }
+        break;
+    case 1: bus_write(cpu->bus, --cpu->regs.sp, cpu->tmp.hi); break;
+    case 2: bus_write(cpu->bus, --cpu->regs.sp, cpu->tmp.lo); break;
+    case 3: prefetch(cpu); break;
+    }
+}
+
 void sm83_m_cycle(struct sm83 *cpu) {
     switch (cpu->opcode) {
     case 0x00: nop(cpu); break; // NOP
@@ -904,6 +942,16 @@ void sm83_m_cycle(struct sm83 *cpu) {
     case 0xEF: rst(cpu, 0x28); // RST 28h
     case 0xF7: rst(cpu, 0x30); // RST 30h
     case 0xFF: rst(cpu, 0x38); // RST 38h
+
+    case 0xC1: pop(cpu, r16stk_bc); break; // POP BC
+    case 0xD1: pop(cpu, r16stk_de); break; // POP DE
+    case 0xE1: pop(cpu, r16stk_hl); break; // POP HL
+    case 0xF1: pop(cpu, r16stk_af); break; // POP AF
+
+    case 0xC5: push(cpu, r16stk_bc); break; // PUSH BC
+    case 0xD5: push(cpu, r16stk_de); break; // PUSH DE
+    case 0xE5: push(cpu, r16stk_hl); break; // PUSH HL
+    case 0xF5: push(cpu, r16stk_af); break; // PUSH AF
 
     case 0x10: exit(1); // STOP (implement later)
     case 0x76: exit(1); // HALT (implement later)
