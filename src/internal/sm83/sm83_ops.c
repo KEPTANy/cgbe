@@ -747,17 +747,208 @@ static void ld_a_imm16(struct sm83 *cpu) {
     }
 }
 
-static void rlc(struct sm83 *cpu, enum r8 reg);
-static void rrc(struct sm83 *cpu, enum r8 reg);
-static void rl(struct sm83 *cpu, enum r8 reg);
-static void rr(struct sm83 *cpu, enum r8 reg);
-static void sla(struct sm83 *cpu, enum r8 reg);
-static void sra(struct sm83 *cpu, enum r8 reg);
-static void swap(struct sm83 *cpu, enum r8 reg);
-static void srl(struct sm83 *cpu, enum r8 reg);
-static void bit(struct sm83 *cpu, enum r8 reg, uint8_t idx);
-static void res(struct sm83 *cpu, enum r8 reg, uint8_t idx);
-static void set(struct sm83 *cpu, enum r8 reg, uint8_t idx);
+// RLC r8 | M-cycles: 2/4 | Flags: Z00C
+static void rlc(struct sm83 *cpu, enum r8 reg) {
+    assert(cpu->m_cycle < 4);
+
+    bool one_more;
+    switch (cpu->m_cycle++) {
+    case 1:
+        one_more = load_from_r8(cpu, &cpu->tmp.lo, reg);
+        cpu->regs.f = (cpu->tmp.lo & (1 << 7)) ? SM83_C_MASK : 0;
+        cpu->tmp.lo = (cpu->tmp.lo << 1) | (cpu->regs.f ? 1 : 0);
+        cpu->regs.f |= (cpu->tmp.lo == 0) ? SM83_Z_MASK : 0;
+        if (one_more) break;
+    case 2:
+        one_more = load_to_r8(cpu, reg, cpu->tmp.lo);
+        if (one_more) break;
+    case 3: prefetch(cpu); break;
+    }
+}
+
+// RRC r8 | M-cycles: 2/4 | Flags: Z00C
+static void rrc(struct sm83 *cpu, enum r8 reg) {
+    assert(cpu->m_cycle < 4);
+
+    bool one_more;
+    switch (cpu->m_cycle++) {
+    case 1:
+        one_more = load_from_r8(cpu, &cpu->tmp.lo, reg);
+        cpu->regs.f = (cpu->tmp.lo & 1) ? SM83_C_MASK : 0;
+        cpu->tmp.lo = (cpu->tmp.lo >> 1) | (cpu->regs.f ? (1 << 7) : 0);
+        cpu->regs.f |= (cpu->tmp.lo == 0) ? SM83_Z_MASK : 0;
+        if (one_more) break;
+    case 2:
+        one_more = load_to_r8(cpu, reg, cpu->tmp.lo);
+        if (one_more) break;
+    case 3: prefetch(cpu); break;
+    }
+}
+
+// RL r8 | M-cycles: 2/4 | Flags: Z00C
+static void rl(struct sm83 *cpu, enum r8 reg) {
+    assert(cpu->m_cycle < 4);
+
+    bool one_more;
+    switch (cpu->m_cycle++) {
+    case 1:
+        one_more = load_from_r8(cpu, &cpu->tmp.lo, reg);
+        bool c = cpu->regs.f & SM83_C_MASK;
+        cpu->regs.f = (cpu->tmp.lo & (1 << 7)) ? SM83_C_MASK : 0;
+        cpu->tmp.lo = (cpu->tmp.lo << 1) | (c ? 1 : 0);
+        cpu->regs.f |= (cpu->tmp.lo == 0) ? SM83_Z_MASK : 0;
+        if (one_more) break;
+    case 2:
+        one_more = load_to_r8(cpu, reg, cpu->tmp.lo);
+        if (one_more) break;
+    case 3: prefetch(cpu); break;
+    }
+}
+
+// RR r8 | M-cycles: 2/4 | Flags: Z00C
+static void rr(struct sm83 *cpu, enum r8 reg) {
+    assert(cpu->m_cycle < 4);
+
+    bool one_more;
+    switch (cpu->m_cycle++) {
+    case 1:
+        one_more = load_from_r8(cpu, &cpu->tmp.lo, reg);
+        bool c = cpu->regs.f & SM83_C_MASK;
+        cpu->regs.f = (cpu->tmp.lo & 1) ? SM83_C_MASK : 0;
+        cpu->tmp.lo = (cpu->tmp.lo << 1) | (c ? (1 << 7) : 0);
+        cpu->regs.f |= (cpu->tmp.lo == 0) ? SM83_Z_MASK : 0;
+        if (one_more) break;
+    case 2:
+        one_more = load_to_r8(cpu, reg, cpu->tmp.lo);
+        if (one_more) break;
+    case 3: prefetch(cpu); break;
+    }
+}
+
+// SLA r8 | M-cycles: 2/4 | Flags: Z00C
+static void sla(struct sm83 *cpu, enum r8 reg) {
+    assert(cpu->m_cycle < 4);
+
+    bool one_more;
+    switch (cpu->m_cycle++) {
+    case 1:
+        one_more = load_from_r8(cpu, &cpu->tmp.lo, reg);
+        cpu->regs.f = (cpu->tmp.lo & (1 << 7)) ? SM83_C_MASK : 0;
+        cpu->tmp.lo <<= 1;
+        cpu->regs.f |= (cpu->tmp.lo == 0) ? SM83_Z_MASK : 0;
+        if (one_more) break;
+    case 2:
+        one_more = load_to_r8(cpu, reg, cpu->tmp.lo);
+        if (one_more) break;
+    case 3: prefetch(cpu); break;
+    }
+}
+
+// SRA r8 | M-cycles: 2/4 | Flags: Z00C
+static void sra(struct sm83 *cpu, enum r8 reg) {
+    assert(cpu->m_cycle < 4);
+
+    bool one_more;
+    switch (cpu->m_cycle++) {
+    case 1:
+        one_more = load_from_r8(cpu, &cpu->tmp.lo, reg);
+        cpu->regs.f = (cpu->tmp.lo & 1) ? SM83_C_MASK : 0;
+        cpu->tmp.lo = (cpu->tmp.lo >> 1) | (cpu->tmp.lo & (1 << 7));
+        cpu->regs.f |= (cpu->tmp.lo == 0) ? SM83_Z_MASK : 0;
+        if (one_more) break;
+    case 2:
+        one_more = load_to_r8(cpu, reg, cpu->tmp.lo);
+        if (one_more) break;
+    case 3: prefetch(cpu); break;
+    }
+}
+
+// SWAP r8 | M-cycles: 2/4 | Flags: Z000
+static void swap(struct sm83 *cpu, enum r8 reg) {
+    assert(cpu->m_cycle < 4);
+
+    bool one_more;
+    switch (cpu->m_cycle++) {
+    case 1:
+        one_more = load_from_r8(cpu, &cpu->tmp.lo, reg);
+        cpu->tmp.lo = (cpu->tmp.lo << 4) | (cpu->tmp.lo >> 4);
+        cpu->regs.f &= SM83_Z_MASK;
+        if (one_more) break;
+    case 2:
+        one_more = load_to_r8(cpu, reg, cpu->tmp.lo);
+        if (one_more) break;
+    case 3: prefetch(cpu); break;
+    }
+}
+
+// SRL r8 | M-cycles: 2/4 | Flags: Z00C
+static void srl(struct sm83 *cpu, enum r8 reg) {
+    assert(cpu->m_cycle < 4);
+
+    bool one_more;
+    switch (cpu->m_cycle++) {
+    case 1:
+        one_more = load_from_r8(cpu, &cpu->tmp.lo, reg);
+        cpu->regs.f = (cpu->tmp.lo & 1) ? SM83_C_MASK : 0;
+        cpu->tmp.lo >>= 1;
+        cpu->regs.f |= (cpu->tmp.lo == 0) ? SM83_Z_MASK : 0;
+        if (one_more) break;
+    case 2:
+        one_more = load_to_r8(cpu, reg, cpu->tmp.lo);
+        if (one_more) break;
+    case 3: prefetch(cpu); break;
+    }
+}
+
+// BIT r8, idx | M-cycles: 2/3 | Flags: Z01-
+static void bit(struct sm83 *cpu, enum r8 reg, uint8_t idx) {
+    assert(cpu->m_cycle < 3);
+
+    bool one_more;
+    switch (cpu->m_cycle++) {
+    case 1:
+        one_more = load_from_r8(cpu, &cpu->tmp.lo, reg);
+        cpu->regs.f &= SM83_C_MASK;
+        cpu->regs.f |= SM83_H_MASK;
+        cpu->regs.f |= (cpu->tmp.lo & (1 << idx)) ? SM83_Z_MASK : 0;
+        if (one_more) break;
+    case 2: prefetch(cpu); break;
+    }
+}
+
+// RES r8, idx | M-cycles: 2/4 | Flags: ----
+static void res(struct sm83 *cpu, enum r8 reg, uint8_t idx) {
+    assert(cpu->m_cycle < 4);
+
+    bool one_more;
+    switch (cpu->m_cycle++) {
+    case 1:
+        one_more = load_from_r8(cpu, &cpu->tmp.lo, reg);
+        cpu->tmp.lo &= ~(1 << idx);
+        if (one_more) break;
+    case 2: 
+        one_more = load_to_r8(cpu, reg, cpu->tmp.lo);
+        if (one_more) break;
+    case 3: prefetch(cpu); break;
+    }
+}
+
+// SET r8, idx | M-cycles: 2/4 | Flags: ----
+static void set(struct sm83 *cpu, enum r8 reg, uint8_t idx) {
+    assert(cpu->m_cycle < 4);
+
+    bool one_more;
+    switch (cpu->m_cycle++) {
+    case 1:
+        one_more = load_from_r8(cpu, &cpu->tmp.lo, reg);
+        cpu->tmp.lo |= 1 << idx;
+        if (one_more) break;
+    case 2: 
+        one_more = load_to_r8(cpu, reg, cpu->tmp.lo);
+        if (one_more) break;
+    case 3: prefetch(cpu); break;
+    }
+}
 
 static void cb_prefix(struct sm83 *cpu) {
     if (cpu->m_cycle == 0) {
