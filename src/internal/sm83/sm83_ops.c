@@ -747,6 +747,43 @@ static void ld_a_imm16(struct sm83 *cpu) {
     }
 }
 
+static void rlc(struct sm83 *cpu, enum r8 reg);
+static void rrc(struct sm83 *cpu, enum r8 reg);
+static void rl(struct sm83 *cpu, enum r8 reg);
+static void rr(struct sm83 *cpu, enum r8 reg);
+static void sla(struct sm83 *cpu, enum r8 reg);
+static void sra(struct sm83 *cpu, enum r8 reg);
+static void swap(struct sm83 *cpu, enum r8 reg);
+static void srl(struct sm83 *cpu, enum r8 reg);
+static void bit(struct sm83 *cpu, enum r8 reg, uint8_t idx);
+static void res(struct sm83 *cpu, enum r8 reg, uint8_t idx);
+static void set(struct sm83 *cpu, enum r8 reg, uint8_t idx);
+
+static void cb_prefix(struct sm83 *cpu) {
+    if (cpu->m_cycle == 0) {
+        cpu->tmp.lo = bus_read(cpu->bus, cpu->regs.pc++);
+        return;
+    }
+
+    switch (cpu->tmp.lo & 0b11000000) {
+    case 0b00000000:
+        switch (cpu->tmp.lo & 0b0011100) {
+        case 0b00000000: rlc(cpu, cpu->tmp.lo & 0x00000111); break;
+        case 0b00001000: rrc(cpu, cpu->tmp.lo & 0x00000111); break;
+        case 0b00010000: rl(cpu, cpu->tmp.lo & 0x00000111); break;
+        case 0b00011000: rr(cpu, cpu->tmp.lo & 0x00000111); break;
+        case 0b00100000: sla(cpu, cpu->tmp.lo & 0x00000111); break;
+        case 0b00101000: sra(cpu, cpu->tmp.lo & 0x00000111); break;
+        case 0b00110000: swap(cpu, cpu->tmp.lo & 0x00000111); break;
+        case 0b00111000: srl(cpu, cpu->tmp.lo & 0x00000111); break;
+        }
+        break;
+    case 0b01000000: bit(cpu, cpu->tmp.lo & 0b00000111, cpu->tmp.lo & 0b00111000); break;
+    case 0b10000000: res(cpu, cpu->tmp.lo & 0b00000111, cpu->tmp.lo & 0b00111000); break;
+    case 0b11000000: set(cpu, cpu->tmp.lo & 0b00000111, cpu->tmp.lo & 0b00111000); break;
+    }
+}
+
 void sm83_m_cycle(struct sm83 *cpu) {
     switch (cpu->opcode) {
     case 0x00: nop(cpu); break; // NOP
@@ -1027,6 +1064,8 @@ void sm83_m_cycle(struct sm83 *cpu) {
 
     case 0xEA: ld_imm16_a(cpu); break; // LD [imm16], a
     case 0xFA: ld_a_imm16(cpu); break; // LD a, [imm16]
+
+    case 0xCB: cb_prefix(cpu); // 0xCB is a prefix for 2 byte ops
 
     case 0x10: exit(1); // STOP (implement later)
     case 0x76: exit(1); // HALT (implement later)
